@@ -85,8 +85,9 @@ class Window(object):
             # update the title bar with our frames per second
             pygame.display.set_caption('Ancient Empires, %d fps' % self.clock.get_fps())
 
+            # draw map
+            self.window.fill((255, 225, 255))
             self.window.blit(self.map_image, (0, 0))
-            #self.window.fill((255, 225, 255))
 
             # render the screen, even though we don't have anything going on right now
             pygame.display.flip()

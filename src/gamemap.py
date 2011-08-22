@@ -9,7 +9,6 @@ __version__ = "Version: 0.0.1 "
 __date__ = "Date: 2011-08-22 12:40:17.689062 "
 
 import os
-import sys
 import logging
 import ConfigParser
 
@@ -25,19 +24,21 @@ TILE_SIZE = 50
 
 
 class GameMap(object):
+    '''Stores map image and array. Loads levels.'''
 
     def __init__(self):
-
         self._TILE_SIZE = TILE_SIZE
         self._level_name = "level_1"
         self._level = self._load_level(self._level_name)
         self._image = self._generate_image(self._level)
 
     def get_tile_type(self, pixel_x, pixel_y):
-        x, y = self._to_tile_xy(pixel_x, pixel_y)
-        return self._level[y][x]
+        '''Return tile type at coords as string. E. g. "road" or "land".'''
+        tile_x, tile_y = self._to_tile_xy(pixel_x, pixel_y)
+        return self._level[tile_y][tile_x].get_type()
 
     def get_image(self):
+        '''Return complete map image'''
         assert self._image != None
         return self._image
 
@@ -45,8 +46,11 @@ class GameMap(object):
         pass
 
     def _load_level(self, name):
+        '''Return level object (2d array) read from file'''
         level = []
         tile_factory = _TileFactory()
+        # read level info from file, create corresponding
+        # objects and store them in 2d array
         for line in open(os.path.join(LEVELS_DIR, name)):
             row = []
             for item in line.rstrip():
@@ -74,23 +78,31 @@ class GameMap(object):
                                      name, item)
             level.append(row)
 
-        if False in [len(level[i]) == len(level[i + 1]) 
+        # all rows should be the same size
+        if False in [len(level[i]) == len(level[i + 1])
                      for i in range(len(level) - 1)]:
             LOGGER.exception('not all rows in %s have same width', name)
         return level
 
     def _generate_image(self, level):
+        '''Return image of whole level built from tiles.'''
         w = h = self._TILE_SIZE
         width = len(level[0]) * w
         height = len(level) * h
         image = pygame.Surface((width, height))
+        # blit each tile to image
         for i, row in enumerate(level):
             for j, tile in enumerate(level[i]):
                 image.blit(tile.get_image(), (j * w, i * h))
         return image
 
     def _to_tile_xy(self, pixel_x, pixel_y):
+        '''Convert pixel coords to tile coords.'''
         return pixel_x / self._TILE_SIZE, pixel_y / self._TILE_SIZE
+
+    def _tile_at_xy(self,  pixel_x, pixel_y):
+        '''Return tile object at pixel coords.'''
+        return self._level[pixel_y / self._TILE_SIZE][pixel_x / self._TILE_SIZE]
 
 
 class _TileFactory(object):
@@ -103,6 +115,7 @@ class _TileFactory(object):
         self._tile_types = self._load_tile_types()
 
     def _load_tile_types(self, filename='tile_types'):
+        '''Return tile types dict read from config file.'''
         path = os.path.join(IMAGES_DIR, filename)
         config = ConfigParser.RawConfigParser()
         config.read(path)
@@ -130,6 +143,7 @@ class _TileFactory(object):
 
 
 class _Tile(object):
+    '''Single game tile. Stores attributes and image.'''
 
     def __init__(self, type, image, defence, speed, heal, owner):
         self.type = type
@@ -148,6 +162,9 @@ class _Tile(object):
 
     def get_image(self):
         return self.image
+
+    def get_type(self):
+        return self.type
 
 
 def _load_image(name, colorkey=None):
