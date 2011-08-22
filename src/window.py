@@ -12,6 +12,7 @@ import sys
 import os
 import logging
 import colorer
+import gamemap
 
 LOGGER = logging.getLogger('main.window')
 
@@ -60,6 +61,12 @@ class Window(object):
         # want keys so we can close the window with the esc key
         pygame.event.set_allowed([pl.QUIT, pl.KEYDOWN])
 
+        self._init_game()
+
+    def _init_game(self):
+        LOGGER.debug('Initializing game map')
+        self.map = gamemap.GameMap()
+
     def run(self):
         """Runs the game. Contains the game loop that computes and renders
         each frame."""
@@ -69,8 +76,6 @@ class Window(object):
         running = True
         # run until something tells us to stop
         while running:
-
-            self.simulation.step()
 
             # tick pygame clock
             # you can limit the fps by passing the desired frames per second to tick()
@@ -96,13 +101,13 @@ class Window(object):
 
         # poll for pygame events
         for event in pygame.event.get():
-            if event.type == pyg_loc.QUIT:
+            if event.type == pl.QUIT:
                 return False
 
             # handle user input
-            elif event.type == pyg_loc.KEYDOWN:
+            elif event.type == pl.KEYDOWN:
                 # if the user presses escape, quit the event loop.
-                if event.key == pyg_loc.K_ESCAPE:
+                if event.key == pl.K_ESCAPE:
                     return False
         return True
 
