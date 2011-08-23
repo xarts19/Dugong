@@ -4,10 +4,6 @@
 
 """
 
-__author__ = "Xarts19 (xarts19@gmail.com)"
-__version__ = "Version: 0.0.1 "
-__date__ = "Date: 2011-08-22 12:23:45.187597 "
-
 import sys
 import os
 import logging
@@ -25,6 +21,11 @@ if not pygame.mixer: LOGGER.warning('Sound disabled')
 
 import gamemap
 import units
+import game
+
+__author__ = "Xarts19 (xarts19@gmail.com)"
+__version__ = "Version: 0.0.1 "
+__date__ = "Date: 2011-08-22 12:23:45.187597 "
 
 LOGGER = logging.getLogger('main.window')
 
@@ -65,11 +66,8 @@ class Window(object):
         self._init_game()
 
     def _init_game(self):
-        LOGGER.debug('Initializing game map')
-        self.map = gamemap.GameMap()
-        self.map_image = self.map.get_image()
-        self.units = [units.Unit()]
-        self.allsprites = pygame.sprite.RenderUpdates(self.units)
+        self._game = game.Game()
+        self._allsprites = pygame.sprite.RenderUpdates(self._game.units)
 
     def run(self):
         """Runs the game. Contains the game loop that computes and renders
@@ -90,8 +88,11 @@ class Window(object):
 
             # draw map
             self.window.fill((255, 225, 255))
-            self.window.blit(self.map_image, (0, 0))
-            self.allsprites.draw(self.window)
+            self.window.blit(self._game.map_image, (0, 0))
+            # update units and draw them
+            self._allsprites.empty()
+            self._allsprites.add(self._game.units)
+            self._allsprites.draw(self.window)
 
             # render the screen, even though we don't have anything going on right now
             pygame.display.flip()

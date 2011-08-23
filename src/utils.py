@@ -4,10 +4,6 @@
 
 """
 
-__author__ = "Xarts19 (xarts19@gmail.com)"
-__version__ = "Version: 0.0.1 "
-__date__ = "Date: 2011-08-23 15:06:07.704924 "
-
 import os
 import logging
 import ConfigParser as cparser
@@ -16,7 +12,11 @@ import pygame
 import pygame.locals as pl
 import pygame.transform as pytrans
 
-_LOGGER = logging.getLogger('main.utilities')
+__author__ = "Xarts19 (xarts19@gmail.com)"
+__version__ = "Version: 0.0.1 "
+__date__ = "Date: 2011-08-23 15:06:07.704924 "
+
+_LOGGER = logging.getLogger('main.utils')
 GAME_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 IMAGES_DIR = os.path.join(GAME_DIR, 'images')
 LEVELS_DIR = os.path.join(GAME_DIR, 'levels')
@@ -36,7 +36,10 @@ def load_image(name, colorkey=None):
         image = pygame.Surface((50, 50))
         image.fill((255, 0, 0, 255))
         colorkey = None
-    image = image.convert()
+    if os.path.splitext(name)[0] == '.png':
+        image = image.convert_alpha()
+    else:
+        image = image.convert()
     if colorkey is not None:
         if colorkey is (-1):
             colorkey = image.get_at((0, 0))
@@ -82,18 +85,24 @@ def load_level_info(name):
 
 def load_tile_types(filename='tile_types'):
     '''Return tile types dict read from config file.'''
+    tiles_info = _load_config(filename)
+    return tiles_info
+
+def load_unit_types(filename='unit_types'):
+    '''Return unit types dict read from config file.'''
+    units_info = _load_config(filename)
+    return units_info
+
+def _load_config(filename):
     path = os.path.join(IMAGES_DIR, filename)
     config = cparser.RawConfigParser()
     config.read(path)
-    types = config.sections()
-    tile_types = {}
-    for tile_type in types:
-        tile_info = {}
-        tile_info['image'] = load_image(config.get(tile_type, 'imagename'))
-        tile_info['defence'] = config.get(tile_type, 'defence')
-        tile_info['speed'] = config.get(tile_type, 'speed')
-        tile_info['heal'] = config.get(tile_type, 'heal')
-        tile_types[tile_type] = tile_info
-    return tile_types
-
-
+    sections = {}
+    for section in config.sections():
+        options = {}
+        for option in config.options(section):
+            options[option] = config.get(section, option)
+        if 'imagename' in options:
+            options['image'] = load_image(options['imagename'])
+        sections[section] = options
+    return sections

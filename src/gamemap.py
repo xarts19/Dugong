@@ -4,10 +4,6 @@
 
 """
 
-__author__ = "Xarts19 (xarts19@gmail.com)"
-__version__ = "Version: 0.0.1 "
-__date__ = "Date: 2011-08-22 12:40:17.689062 "
-
 import os
 import logging
 
@@ -15,6 +11,10 @@ import pygame
 import pygame.locals as pl
 
 import utils
+
+__author__ = "Xarts19 (xarts19@gmail.com)"
+__version__ = "Version: 0.0.1 "
+__date__ = "Date: 2011-08-22 12:40:17.689062 "
 
 _LOGGER = logging.getLogger('main.map')
 
@@ -85,17 +85,18 @@ class _TileFactory(object):
 
     def create_tile(self, tile_type=None, owner=None):
         '''Returns tile instance with attributes for provided type.'''
+        assert tile_type in self._tile_types
         type_info = self._tile_types[tile_type]
         image = type_info['image']
         defence = type_info['defence']
         speed = type_info['speed']
         heal = type_info['heal']
-        tile = _Tile(tile_type=tile_type, image=image, defence=defence,
-                     speed=speed, heal=heal, owner=owner)
+        tile = Tile(tile_type=tile_type, image=image, defence=defence,
+                    speed=speed, heal=heal, owner=owner)
         return tile
 
 
-class _Tile(object):
+class Tile(object):
     '''Single game tile. Stores attributes and image.'''
 
     def __init__(self, tile_type, image, defence, speed, heal, owner):
