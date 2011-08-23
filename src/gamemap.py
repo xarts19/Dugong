@@ -10,7 +10,6 @@ __date__ = "Date: 2011-08-22 12:40:17.689062 "
 
 import os
 import logging
-import ConfigParser as cparser
 
 import pygame
 import pygame.locals as pl
@@ -36,7 +35,7 @@ class GameMap(object):
     def load_level(self, level_num):
         '''Reinitialize map with new level.'''
         level_name = 'level_' + str(level_num)
-        level_info = utils._load_level_info(level_name)
+        level_info = utils.load_level_info(level_name)
         self._level = self._init_level(level_info)
         self._image = self._generate_image(self._level)
 
@@ -82,28 +81,12 @@ class _TileFactory(object):
     '''
 
     def __init__(self):
-        self._tile_types = self._load_tile_types()
-
-    def _load_tile_types(self, filename='tile_types'):
-        '''Return tile types dict read from config file.'''
-        path = os.path.join(utils.IMAGES_DIR, filename)
-        config = cparser.RawConfigParser()
-        config.read(path)
-        types = config.sections()
-        tile_types = {}
-        for tile_type in types:
-            tile_info = {}
-            tile_info['imagename'] = config.get(tile_type, 'imagename')
-            tile_info['defence'] = config.get(tile_type, 'defence')
-            tile_info['speed'] = config.get(tile_type, 'speed')
-            tile_info['heal'] = config.get(tile_type, 'heal')
-            tile_types[tile_type] = tile_info
-        return tile_types
+        self._tile_types = utils.load_tile_types()
 
     def create_tile(self, tile_type=None, owner=None):
         '''Returns tile instance with attributes for provided type.'''
         type_info = self._tile_types[tile_type]
-        image = utils._load_image(type_info['imagename'])
+        image = type_info['image']
         defence = type_info['defence']
         speed = type_info['speed']
         heal = type_info['heal']

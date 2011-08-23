@@ -10,6 +10,7 @@ __date__ = "Date: 2011-08-23 15:06:07.704924 "
 
 import os
 import logging
+import ConfigParser as cparser
 
 import pygame
 import pygame.locals as pl
@@ -22,7 +23,7 @@ LEVELS_DIR = os.path.join(GAME_DIR, 'levels')
 TILE_SIZE = 50
 
 
-def _load_image(name, colorkey=None):
+def load_image(name, colorkey=None):
     '''Load image. Uses red box as fallback.'''
     fullname = os.path.join(IMAGES_DIR, name)
     try:
@@ -42,39 +43,57 @@ def _load_image(name, colorkey=None):
         image.set_colorkey(colorkey, pl.RLEACCEL)
     return image
 
-def _load_level_info(name):
-        '''Return level object (2d array) read from file'''
-        level = []
-        # read level info from file, create corresponding
-        # objects and store them in 2d array
-        for line in open(os.path.join(LEVELS_DIR, name)):
-            row = []
-            for item in line.rstrip():
-                if item == 'r':
-                    row.append(('road', 0))
-                elif item == 'l':
-                    row.append(('land', 0))
-                elif item == 'f':
-                    row.append(('forest', 0))
-                elif item == 'w':
-                    row.append(('water', 0))
-                elif item == 'b':
-                    row.append(('bridge', 0))
-                elif item == 'm':
-                    row.append(('mountain', 0))
-                elif item == 'h':
-                    row.append(('house', 0))
-                elif item == '1':
-                    row.append(('castle', 1))
-                elif item == '2':
-                    row.append(('castle', 2))
-                else:
-                    row.append(('road', 0))
-                    _LOGGER.exception('unrecognized tile type in %s: %s',
-                                      name, item)
-            level.append(row)
-        # all rows should be the same size
-        if False in [len(level[i]) == len(level[i + 1])
-                     for i in range(len(level) - 1)]:
-            _LOGGER.exception('not all rows in %s have same width', name)
-        return level
+def load_level_info(name):
+    '''Return level object (2d array) read from file'''
+    level = []
+    # read level info from file, create corresponding
+    # objects and store them in 2d array
+    for line in open(os.path.join(LEVELS_DIR, name)):
+        row = []
+        for item in line.rstrip():
+            if item == 'r':
+                row.append(('road', 0))
+            elif item == 'l':
+                row.append(('land', 0))
+            elif item == 'f':
+                row.append(('forest', 0))
+            elif item == 'w':
+                row.append(('water', 0))
+            elif item == 'b':
+                row.append(('bridge', 0))
+            elif item == 'm':
+                row.append(('mountain', 0))
+            elif item == 'h':
+                row.append(('house', 0))
+            elif item == '1':
+                row.append(('castle', 1))
+            elif item == '2':
+                row.append(('castle', 2))
+            else:
+                row.append(('road', 0))
+                _LOGGER.exception('unrecognized tile type in %s: %s',
+                                  name, item)
+        level.append(row)
+    # all rows should be the same size
+    if False in [len(level[i]) == len(level[i + 1])
+                 for i in range(len(level) - 1)]:
+        _LOGGER.exception('not all rows in %s have same width', name)
+    return level
+
+def load_tile_types(filename='tile_types'):
+    '''Return tile types dict read from config file.'''
+    path = os.path.join(IMAGES_DIR, filename)
+    config = cparser.RawConfigParser()
+    config.read(path)
+    types = config.sections()
+    tile_types = {}
+    for tile_type in types:
+        tile_info = {}
+        tile_info['image'] = load_image(config.get(tile_type, 'imagename'))
+        tile_info['defence'] = config.get(tile_type, 'defence')
+        tile_info['speed'] = config.get(tile_type, 'speed')
+        tile_info['heal'] = config.get(tile_type, 'heal')
+        tile_types[tile_type] = tile_info
+    return tile_types
+
+

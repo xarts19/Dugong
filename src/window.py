@@ -12,9 +12,6 @@ import sys
 import os
 import logging
 import colorer
-import gamemap
-
-LOGGER = logging.getLogger('main.window')
 
 try:
     import pygame
@@ -26,6 +23,10 @@ except ImportError as ex:
 if not pygame.font: LOGGER.warning('Fonts disabled')
 if not pygame.mixer: LOGGER.warning('Sound disabled')
 
+import gamemap
+import units
+
+LOGGER = logging.getLogger('main.window')
 
 class Window(object):
 
@@ -67,6 +68,8 @@ class Window(object):
         LOGGER.debug('Initializing game map')
         self.map = gamemap.GameMap()
         self.map_image = self.map.get_image()
+        self.units = [units.Unit()]
+        self.allsprites = pygame.sprite.RenderUpdates(self.units)
 
     def run(self):
         """Runs the game. Contains the game loop that computes and renders
@@ -88,6 +91,7 @@ class Window(object):
             # draw map
             self.window.fill((255, 225, 255))
             self.window.blit(self.map_image, (0, 0))
+            self.allsprites.draw(self.window)
 
             # render the screen, even though we don't have anything going on right now
             pygame.display.flip()
