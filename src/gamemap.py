@@ -32,17 +32,13 @@ class GameMap(object):
         self._level = self._load_level(self._level_name)
         self._image = self._generate_image(self._level)
 
-    def get_tile_type(self, pixel_x, pixel_y):
-        '''Return tile type at coords as string. E. g. "road" or "land".'''
-        tile_x, tile_y = self._to_tile_xy(pixel_x, pixel_y)
-        return self._level[tile_y][tile_x].get_type()
-
     def get_image(self):
         '''Return complete map image'''
         assert self._image != None
         return self._image
 
     def load_level(self, level_num):
+        '''Reinitialize map with new level.'''
         pass
 
     def _load_level(self, name):
@@ -86,14 +82,14 @@ class GameMap(object):
 
     def _generate_image(self, level):
         '''Return image of whole level built from tiles.'''
-        w = h = self._TILE_SIZE
-        width = len(level[0]) * w
-        height = len(level) * h
-        image = pygame.Surface((width, height))
+        tile_width = tile_height = self._TILE_SIZE
+        map_width = len(level[0]) * tile_width
+        map_height = len(level) * tile_height
+        image = pygame.Surface((map_width, map_height))
         # blit each tile to image
         for i, row in enumerate(level):
-            for j, tile in enumerate(level[i]):
-                image.blit(tile.get_image(), (j * w, i * h))
+            for j, tile in enumerate(row):
+                image.blit(tile.get_image(), (j * tile_width, i * tile_height))
         return image
 
     def _to_tile_xy(self, pixel_x, pixel_y):
@@ -121,32 +117,32 @@ class _TileFactory(object):
         config.read(path)
         types = config.sections()
         tile_types = {}
-        for t in types:
-            tile = {}
-            tile['imagename'] = config.get(t, 'imagename')
-            tile['defence'] = config.get(t, 'defence')
-            tile['speed'] = config.get(t, 'speed')
-            tile['heal'] = config.get(t, 'heal')
-            tile_types[t] = tile
+        for tile_type in types:
+            tile_info = {}
+            tile_info['imagename'] = config.get(tile_type, 'imagename')
+            tile_info['defence'] = config.get(tile_type, 'defence')
+            tile_info['speed'] = config.get(tile_type, 'speed')
+            tile_info['heal'] = config.get(tile_type, 'heal')
+            tile_types[tile_type] = tile_info
         return tile_types
 
     def create_tile(self, tile_type=None, owner=None):
         '''Returns tile instance with attributes for provided type.'''
-        type = self._tile_types[tile_type]
-        im = _load_image(type['imagename'])
-        de = type['defence']
-        sp = type['speed']
-        he = type['heal']
-        tile = _Tile(type=tile_type, image=im, defence=de,
-                     speed=sp, heal=he, owner=owner)
+        type_info = self._tile_types[tile_type]
+        image = _load_image(type_info['imagename'])
+        defence = type_info['defence']
+        speed = type_info['speed']
+        heal = type_info['heal']
+        tile = _Tile(tile_type=tile_type, image=image, defence=defence,
+                     speed=speed, heal=heal, owner=owner)
         return tile
 
 
 class _Tile(object):
     '''Single game tile. Stores attributes and image.'''
 
-    def __init__(self, type, image, defence, speed, heal, owner):
-        self.type = type
+    def __init__(self, tile_type, image, defence, speed, heal, owner):
+        self.type = tile_type
         self.image = image
         self.defence = defence
         self.speed = speed
@@ -155,16 +151,15 @@ class _Tile(object):
         self.unit = None
 
     def get_contained_unit(self):
+        '''Unit that is situated in this tile, or None if its empty.'''
         return self.unit
 
     def has_unit(self):
-        return self.unit != None
+        '''True if unit is situated here.'''
+        return self.unit is not None
 
     def get_image(self):
         return self.image
-
-    def get_type(self):
-        return self.type
 
 
 def _load_image(name, colorkey=None):
