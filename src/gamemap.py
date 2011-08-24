@@ -4,11 +4,9 @@
 
 """
 
-import os
 import logging
 
 import pygame
-import pygame.locals as pl
 
 import utils
 
@@ -25,31 +23,27 @@ class GameMap(object):
         self._TILE_SIZE = utils.TILE_SIZE
         self._level = None
         self._image = None
-        self.load_level(1)
 
-    def get_image(self):
+    @property
+    def image(self):
         '''Return complete map image'''
         assert self._image != None
         return self._image
 
-    def load_level(self, level_num):
+    def load_level(self, level_map):
         '''Reinitialize map with new level.'''
-        level_name = 'level_' + str(level_num)
-        level_info = utils.load_level_info(level_name)
-        self._level = self._init_level(level_info)
+        self._level = self._init_level(level_map)
         self._image = self._generate_image(self._level)
 
-    def _init_level(self, level_info):
+    def _init_level(self, level_map):
         '''Return level object (2d array) read from file'''
         level = []
         tile_factory = _TileFactory()
         # create tiles from level definition
-        for row in level_info:
+        for i, row in enumerate(level_map):
             tile_row = []
-            for item in row:
-                tile_type = item[0]
-                tile_owner = item[1] if item[1] else None
-                tile_row.append(tile_factory.create_tile(tile_type, tile_owner))
+            for j, tile_type_short in enumerate(row):
+                tile_row.append(tile_factory.create_tile(tile_type_short, (j, i)))
             level.append(tile_row)
         return level
 
@@ -62,17 +56,48 @@ class GameMap(object):
         # blit each tile to image
         for i, row in enumerate(level):
             for j, tile in enumerate(row):
-                image.blit(tile.get_image(), (j * tile_width, i * tile_height))
+                image.blit(tile.image, tile.coord)
         return image
 
-    def _to_tile_xy(self, pixel_x, pixel_y):
-        '''Convert pixel coords to tile coords.'''
-        return pixel_x / self._TILE_SIZE, pixel_y / self._TILE_SIZE
-
-    def _tile_at_xy(self,  pixel_x, pixel_y):
+    def tile_at_coord(self, x, y):
         '''Return tile object at pixel coords.'''
-        return self._level[pixel_y / self._TILE_SIZE][pixel_x / self._TILE_SIZE]
+        i = y / self._TILE_SIZE
+        j = x / self._TILE_SIZE
+        return self.tile_at_pos(i, j)
 
+    def tile_at_pos(self, i, j):
+        '''Return tile object at matrix coords.'''
+        assert len(self._level) > i and len(self._level[i]) > j, \
+            "Accesing tile outside of bounds: (%s, %s)" % (i, j)
+        return self._level[i][j]
+
+
+class Selection(pygame.sprite.Sprite):
+    """Object responsible for selection of tiles."""
+
+    def __init__(self, _map):
+        self._map = _map
+        self._green_image = utils.load_image('selection_green_bold.png')
+        self._orange_image = utils.load_image('selection_orange_bold.png')
+        self._mouse_coord = (0, 0)
+        self._TILE_SIZE = utils.TILE_SIZE
+        self._selected_tile = None
+
+    def mouse(self, pos):
+        ''''''
+        self._mouse_coord = self._map.tile_at_coord(*pos).coord
+
+    def select_or_move(self, pos):
+        # TODO: check game rules here e. g. self._game.
+        self._selected_tile = self._map.tile_at_coord(*pos)
+
+    def unselect(self):
+        self._selected_tile = None
+
+    def draw(self, image):
+        image.blit(self._green_image, self._mouse_coord)
+        if self._selected_tile:
+            image.blit(self._orange_image, self._selected_tile.coord)
 
 class _TileFactory(object):
     '''Manages creation of different tile types.
@@ -82,42 +107,70 @@ class _TileFactory(object):
 
     def __init__(self):
         self._tile_types = utils.load_tile_types()
+        # same dict but with keys as short names
+        self._tile_types_short = {}
+        for name, tile in self._tile_types.items():
+            tile['name'] = name
+            self._tile_types_short[tile['shortname']] = tile
 
-    def create_tile(self, tile_type=None, owner=None):
+    def create_tile(self, tile_type_short, pos):
         '''Returns tile instance with attributes for provided type.'''
-        assert tile_type in self._tile_types
-        type_info = self._tile_types[tile_type]
+        assert tile_type_short in self._tile_types_short, \
+               "No such tile type: %s" % tile_type_short
+        type_info = self._tile_types_short[tile_type_short]
+        tile_type = type_info['name']
         image = type_info['image']
-        defence = type_info['defence']
-        speed = type_info['speed']
-        heal = type_info['heal']
-        tile = Tile(tile_type=tile_type, image=image, defence=defence,
-                    speed=speed, heal=heal, owner=owner)
+        defence = int(type_info['defence'])
+        speed = int(type_info['speed'])
+        heal = int(type_info['heal'])
+        tile = Tile(tile_type, image, defence, speed, heal, pos)
         return tile
 
 
 class Tile(object):
     '''Single game tile. Stores attributes and image.'''
 
-    def __init__(self, tile_type, image, defence, speed, heal, owner):
+    def __init__(self, tile_type, image, defence, speed, heal, pos):
         self.type = tile_type
-        self.image = image
+        self._image = image
         self.defence = defence
         self.speed = speed
         self.heal = heal
-        self.owner = owner
-        self.unit = None
+        self._owner = None
+        self._pos = pos
+        self._coord = tuple([v * utils.TILE_SIZE for v in pos])
+        self._unit = None
 
-    def get_contained_unit(self):
+    @property
+    def owner(self):
+        return self._owner
+
+    @owner.setter
+    def owner(self, value):
+        self._owner = value
+
+    @property
+    def unit(self):
         '''Unit that is situated in this tile, or None if its empty.'''
-        return self.unit
+        return self._unit
 
-    def has_unit(self):
-        '''True if unit is situated here.'''
-        return self.unit is not None
+    @unit.setter
+    def unit(self, value):
+        assert not self.unit, \
+               "Tile at (%s, %s) already occupied." % (self.pos)
+        self._unit = value
 
-    def get_image(self):
-        return self.image
+    @property
+    def image(self):
+        return self._image
+
+    @property
+    def pos(self):
+        return self._pos
+
+    @property
+    def coord(self):
+        return self._coord
 
 
 

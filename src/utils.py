@@ -19,68 +19,64 @@ __date__ = "Date: 2011-08-23 15:06:07.704924 "
 _LOGGER = logging.getLogger('main.utils')
 GAME_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 IMAGES_DIR = os.path.join(GAME_DIR, 'images')
-LEVELS_DIR = os.path.join(GAME_DIR, 'levels')
+DESCR_DIR = os.path.join(GAME_DIR, 'descr')
 TILE_SIZE = 50
 
 
 def load_image(name, colorkey=None):
     '''Load image. Uses red box as fallback.'''
     fullname = os.path.join(IMAGES_DIR, name)
+    # if image wasn't found, use red box as fallback
     try:
         image = pygame.image.load(fullname)
         w, h = image.get_size()
-        if w > TILE_SIZE or h > TILE_SIZE:
-            image = pytrans.scale(image, (TILE_SIZE, TILE_SIZE))
+        image = pytrans.scale(image, (TILE_SIZE, TILE_SIZE))
     except pygame.error, message:
         _LOGGER.exception("Can't load image: %s", message)
         image = pygame.Surface((50, 50))
         image.fill((255, 0, 0, 255))
         colorkey = None
+    # convert for faster blitting
     if os.path.splitext(name)[0] == '.png':
         image = image.convert_alpha()
     else:
         image = image.convert()
+    # optionally set transparent color
+    # if -1 is passes as color, use first pixel
     if colorkey is not None:
         if colorkey is (-1):
             colorkey = image.get_at((0, 0))
         image.set_colorkey(colorkey, pl.RLEACCEL)
     return image
 
-def load_level_info(name):
+def load_level_info(name, levels_file='levels'):
     '''Return level object (2d array) read from file'''
-    level = []
+    level = {}
     # read level info from file, create corresponding
     # objects and store them in 2d array
-    for line in open(os.path.join(LEVELS_DIR, name)):
-        row = []
-        for item in line.rstrip():
-            if item == 'r':
-                row.append(('road', 0))
-            elif item == 'l':
-                row.append(('land', 0))
-            elif item == 'f':
-                row.append(('forest', 0))
-            elif item == 'w':
-                row.append(('water', 0))
-            elif item == 'b':
-                row.append(('bridge', 0))
-            elif item == 'm':
-                row.append(('mountain', 0))
-            elif item == 'h':
-                row.append(('house', 0))
-            elif item == '1':
-                row.append(('castle', 1))
-            elif item == '2':
-                row.append(('castle', 2))
-            else:
-                row.append(('road', 0))
-                _LOGGER.exception('unrecognized tile type in %s: %s',
-                                  name, item)
-        level.append(row)
+    path = os.path.join(DESCR_DIR, levels_file)
+    config = cparser.RawConfigParser()
+    config.read(path)
+
+    def parse(section):
+        level[section] = []
+        for line in config.get(name, section).split('\n'):
+            row = []
+            for item in line:
+                row.append(item)
+            level[section].append(row)
+    # parse terrain data
+    parse('map')
+    # parse units data
+    parse('units')
+
     # all rows should be the same size
-    if False in [len(level[i]) == len(level[i + 1])
-                 for i in range(len(level) - 1)]:
-        _LOGGER.exception('not all rows in %s have same width', name)
+    if False in [len(level['map'][i]) == len(level['map'][i + 1])
+                 for i in range(len(level['map']) - 1)]:
+        _LOGGER.exception('not all rows in %s map have same width', name)
+    if False in [len(level['units'][i]) == len(level['units'][i + 1])
+                 for i in range(len(level['units']) - 1)]:
+        _LOGGER.exception('not all rows in %s units have same width', name)
     return level
 
 def load_tile_types(filename='tile_types'):
@@ -94,7 +90,7 @@ def load_unit_types(filename='unit_types'):
     return units_info
 
 def _load_config(filename):
-    path = os.path.join(IMAGES_DIR, filename)
+    path = os.path.join(DESCR_DIR, filename)
     config = cparser.RawConfigParser()
     config.read(path)
     sections = {}

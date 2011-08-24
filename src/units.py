@@ -26,24 +26,25 @@ class UnitFactory(object):
     def __init__(self):
         self._unit_types = utils.load_unit_types()
 
-    def create_unit(self, unit_type=None, owner=None):
+    def create_unit(self, unit_type, tile, owner=None):
         '''Returns tile instance with attributes for provided type.'''
-        assert unit_type in self._unit_types
+        assert unit_type in self._unit_types, "No such unit type: %s" % unit_type
         type_info = self._unit_types[unit_type]
         image = type_info['image']
         #defence = type_info['defence']
         #speed = type_info['speed']
         #heal = type_info['heal']
-        unit = Unit(unit_type=unit_type, image=image)
+        unit = Unit(unit_type, image, tile, owner)
         return unit
 
 class Unit(pygame.sprite.Sprite):
 
-    def __init__(self, unit_type, image):
+    def __init__(self, unit_type, image, tile, owner):
         pygame.sprite.Sprite.__init__(self)
         self._type = unit_type
         self.image = image
         self.rect = self.image.get_rect()
-        self.rect.topleft = (50, 50)
-
+        self.owner = owner
+        self._tile = tile
+        self.rect.topleft = tile.coord
 
