@@ -53,30 +53,27 @@ def load_level_info(name, levels_file='levels'):
     '''Return level object (2d array) read from file'''
     level = {}
     # read level info from file, create corresponding
-    # objects and store them in 2d array
+    # objects and store them in 2d arrays
     path = os.path.join(DESCR_DIR, levels_file)
     config = cparser.RawConfigParser()
     config.read(path)
 
-    def parse(section):
-        level[section] = []
-        for line in config.get(name, section).split('\n'):
+    def parse(option):
+        level[option] = []
+        for line in config.get(name, option).split('\n'):
             row = []
             for item in line:
                 row.append(item)
-            level[section].append(row)
-    # parse terrain data
-    parse('map')
-    # parse units data
-    parse('units')
+            level[option].append(row)
 
-    # all rows should be the same size
-    if False in [len(level['map'][i]) == len(level['map'][i + 1])
-                 for i in range(len(level['map']) - 1)]:
-        _LOGGER.exception('not all rows in %s map have same width', name)
-    if False in [len(level['units'][i]) == len(level['units'][i + 1])
-                 for i in range(len(level['units']) - 1)]:
-        _LOGGER.exception('not all rows in %s units have same width', name)
+    # parse all options in needed level
+    for option in config.options(name):
+        parse(option)
+        # all rows should be the same size
+        if False in [len(level[option][i]) == len(level[option][i + 1])
+                     for i in range(len(level[option]) - 1)]:
+            _LOGGER.exception('not all rows in %s %s have same width', name, option)
+
     return level
 
 def load_tile_types(filename='tile_types'):

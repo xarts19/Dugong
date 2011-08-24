@@ -22,7 +22,6 @@ if not pygame.mixer: LOGGER.warning('Sound disabled')
 import gamemap
 import units
 import game
-import utils
 
 __author__ = "Xarts19 (xarts19@gmail.com)"
 __version__ = "Version: 0.0.1 "
@@ -69,8 +68,8 @@ class Window(object):
 
     def _init_game(self):
         self._map = gamemap.GameMap()
-        self._game = game.Game(self._map)
         self._selection = game.Selection(self._map)
+        self._game = game.Game(self._map, self._selection)
         self._allsprites = pygame.sprite.RenderUpdates(self._game.units)
 
     def run(self):
