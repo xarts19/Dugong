@@ -24,6 +24,14 @@ class GameMap(object):
         self._level = None
         self._image = None
 
+    def __repr__(self):
+        occupied_tiles = []
+        for row in self._level:
+            for tile in row:
+                if tile.unit:
+                    occupied_tiles.append(repr(tile))
+        return '\n'.join(occupied_tiles)
+
     @property
     def image(self):
         '''Return complete map image'''
@@ -43,7 +51,7 @@ class GameMap(object):
         for i, row in enumerate(level_map):
             tile_row = []
             for j, tile_type in enumerate(row):
-                tile_row.append(tile_factory.create_tile(tile_type, (j, i)))
+                tile_row.append(tile_factory.create_tile(tile_type, (i, j)))
             level.append(tile_row)
         return level
 
@@ -67,10 +75,33 @@ class GameMap(object):
 
     def tile_at_pos(self, i, j):
         '''Return tile object at matrix coords.'''
-        assert len(self._level) > i and len(self._level[i]) > j, \
-            "Accesing tile outside of bounds: (%s, %s)" % (i, j)
-        return self._level[i][j]
+        if len(self._level) > i and len(self._level[i]) > j:
+            return self._level[i][j]
+        else:
+            # "Accesing tile outside of bounds: (%s, %s)", i, j
+            return None
 
+    def find_path(self, orig, dest):
+        '''Return list of neighbour tiles that unit needs to traverse
+        and if path is valid for this unit.
+        Orig and dest is included.
+        '''
+        path = []
+        orig_i, orig_j = orig.pos
+        dest_i, dest_j = dest.pos
+
+        def my_range(start, stop):
+            if start <= stop:
+                return range(start, stop, 1)
+            else:
+                return range(start, stop, -1)
+
+        for i in my_range(orig_i, dest_i):
+            path.append(self._level[i][orig_j])
+        for j in my_range(orig_j, dest_j):
+            path.append(self._level[dest_i][j])
+        path.append(dest)
+        return path, True
 
 class _TileFactory(object):
     '''Manages creation of different tile types.
@@ -119,8 +150,11 @@ class Tile(object):
         self.heal = heal
         self._owner = None
         self._pos = pos
-        self._coord = tuple([v * utils.TILE_SIZE for v in pos])
+        self._coord = pos[1] * utils.TILE_SIZE, pos[0] * utils.TILE_SIZE
         self._unit = None
+
+    def __repr__(self):
+        return "Tile at (%s, %s)" % self._pos
 
     def selectable(self):
         '''We can only select unit or castle to buy units.'''
@@ -141,7 +175,7 @@ class Tile(object):
 
     @unit.setter
     def unit(self, value):
-        assert not self.unit, \
+        assert value is None or not self.unit, \
                "Tile at (%s, %s) already occupied." % (self.pos)
         self._unit = value
 

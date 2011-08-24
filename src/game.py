@@ -75,16 +75,53 @@ class Selection(pygame.sprite.Sprite):
         self._orange_image = utils.load_image('selection_orange_bold.png')
         self._pointed_tile = None
         self._selected_tile = None
+        self._path = None
 
     def mouse(self, pos):
         '''Determine tile where mouse points.'''
-        self._pointed_tile = self._map.tile_at_coord(*pos)
-
+        new_tile = self._map.tile_at_coord(*pos)
+        if new_tile and new_tile != self._pointed_tile:
+            self._pointed_tile = new_tile
+            if self._selected_tile and self._pointed_tile:
+                self._draw_path()
+            
     def select_or_move(self, pos):
-        '''Determine tile that needs to be selected.'''
-        # TODO: check game rules here e. g. its unit belong to current player
-        if self._map.tile_at_coord(*pos).unit:
+        '''Determine what to do depending on game state and selected tile.'''
+        # TODO: check game rules here e. g. its unit belong to current
+        # player
+        # TODO: check if player want to attack
+        self.mouse(pos)
+        # select
+        if self._pointed_tile.selectable():
+            # select tile
             self._selected_tile = self._map.tile_at_coord(*pos)
+            return
+        # move
+        if self._selected_tile and self._selected_tile.unit \
+                and not self._pointed_tile.unit and self._path_is_valid:
+            self._move()
+            return
+
+    def _draw_path(self):
+        self._find_path()
+        # TODO: check for path validity and draw in red if not valid
+
+    def _find_path(self):
+        orig = self._selected_tile
+        dest = self._pointed_tile
+        self._path, self._path_is_valid = self._map.find_path(orig, dest)
+        
+    def _move(self):
+        dest = self._path[-1]
+        self._selected_tile.unit.move(self._path)
+        # assign new tile to unit
+        self._selected_tile.unit.tile = dest
+        # assign new unit to tile
+        dest.unit = self._selected_tile.unit
+        # remove unit from old tile
+        self._selected_tile.unit = None
+        # select new tile
+        self._selected_tile = dest
 
     def unselect(self):
         self._selected_tile = None

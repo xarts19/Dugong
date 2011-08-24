@@ -20,6 +20,7 @@ _LOGGER = logging.getLogger('main.utils')
 GAME_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 IMAGES_DIR = os.path.join(GAME_DIR, 'images')
 DESCR_DIR = os.path.join(GAME_DIR, 'descr')
+SCREEN_SIZE = (700, 500)
 TILE_SIZE = 50
 
 
@@ -33,7 +34,7 @@ def load_image(name, colorkey=None):
         image = pytrans.scale(image, (TILE_SIZE, TILE_SIZE))
     except pygame.error, message:
         _LOGGER.exception("Can't load image: %s", message)
-        image = pygame.Surface((50, 50))
+        image = pygame.Surface((TILE_SIZE, TILE_SIZE))
         image.fill((255, 0, 0, 255))
         colorkey = None
     # convert for faster blitting
@@ -97,42 +98,68 @@ def _load_config(filename):
             options[option] = config.get(section, option)
         if 'imagename' in options:
             options['image'] = load_image(options['imagename'])
+        if 'animation' in options:
+            options['animation'] = map(load_image, options['animation'].split(','))
         sections[section] = options
     return sections
 
 class AnimatedImage(object):
 
-    def __init__(self, static, animated, fps = 30):
+    def __init__(self, static, animated, coord):
         self._image = static
         self._images = animated
         self._current = self._image
         self._animated = False
+        self._rect = self._image.get_rect()
+        self._rect.topleft = coord
 
     def __call__(self):
         return self._current
 
     def get_rect(self):
-        return self._current.get_rect()
+        return self._rect
 
     def update(self, t):
         if self._animated:
             if t - self._last_update > self._delay:
+                # animate image
                 self._frame += 1
                 if self._frame >= len(self._images):
                     self._frame = 0
-                self.image = self._images[self._frame]
+                self._current = self._images[self._frame]
                 self._last_update = t
+            # move image
+            if self._path['current'] == len(self._path['path']) - 1:
+                self._rect.topleft = self._path['path'][-1]
+                self.stop_animation()
+            else:
+                self._path['current'] += 1
+                self._rect.topleft = self._path['path'][self._path['current']]
 
-    def start_animation(self):
+    def start_animation(self, path, fps=30):
         # Track the time we started, and the time between updates.
         # Then we can figure out when we have to switch the image.
         self._animated = True
+        self._path = self.create_pixel_path(path)
         self._current = self._images[0]
-        self._start = pygame.time.get_ticks()
-        self._delay = 1000 / fps
+        #self._start = pygame.time.get_ticks()
+        self._delay = 5000 / fps
         self._last_update = 0
         self._frame = 0
-        self.update(self._start)
+        self.update(pygame.time.get_ticks())
+
+    def create_pixel_path(self, path):
+        pixel_path = {'current':0, 'path':[]}
+        for tile1, tile2 in zip(path[:-1], path[1:]):
+            x1, y1 = tile1.coord
+            x2, y2 = tile2.coord
+            num_steps = 10
+            dx = (x2 - x1) / float(num_steps)
+            dy = (y2 - y1) / float(num_steps)
+            for i in range(num_steps):
+                pixel_path['path'].append((x1 + dx * i, y1 + dy * i))
+        pixel_path['path'].append(path[-1].coord)
+        return pixel_path
 
     def stop_animation(self):
         self._animated = False

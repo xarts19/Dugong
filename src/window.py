@@ -22,6 +22,7 @@ if not pygame.mixer: LOGGER.warning('Sound disabled')
 import gamemap
 import units
 import game
+import utils
 
 __author__ = "Xarts19 (xarts19@gmail.com)"
 __version__ = "Version: 0.0.1 "
@@ -45,7 +46,7 @@ class Window(object):
         # initial window position
         os.environ['SDL_VIDEO_WINDOW_POS'] = '100,100'
 
-        screen_size = (500, 500)
+        screen_size = utils.SCREEN_SIZE
 
         self.window = pygame.display.set_mode(screen_size, pl.DOUBLEBUF)
         self.image = pygame.Surface(screen_size)
@@ -109,6 +110,7 @@ class Window(object):
     def draw_units(self, image):
         self._allsprites.empty()
         self._allsprites.add(self._game.units)
+        self._allsprites.update(pygame.time.get_ticks())
         self._allsprites.draw(image)
 
     def draw_selections(self, image):

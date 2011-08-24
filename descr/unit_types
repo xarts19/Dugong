@@ -2,6 +2,7 @@
 name=general
 shortname=g
 imagename=general.png
+#animation=general2.png,general3.png,general4.png,general5.png,general6.png,general7.png,general8.png,general9.png
 
 [swordsman]
 name=swordsman

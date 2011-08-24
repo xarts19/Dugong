@@ -44,8 +44,8 @@ class UnitFactory(object):
         # init info from type
         type_info = unit_types[unit_type]
         image = type_info['image']
-        if 'images' in type_info:
-            images = type_info['images'].split(',')
+        if 'animation' in type_info:
+            images = type_info['animation']
         else:
             images = [image]
         #defence = type_info['defence']
@@ -59,20 +59,32 @@ class Unit(pygame.sprite.Sprite):
     def __init__(self, unit_type, image, images, tile, owner):
         pygame.sprite.Sprite.__init__(self)
         self._type = unit_type
-        self._image = utils.AnimatedImage(static=image, animated=images)
-        self.rect = self._image.get_rect()
         self._owner = owner
         self._tile = tile
         self._set_tile_owner()
-        self.rect.topleft = tile.coord
+        self._image = utils.AnimatedImage(static=image, animated=images, coord=tile.coord)
+        self.rect = self._image.get_rect()
 
     @property
     def image(self):
         return self._image()
+
+    @property
+    def tile(self):
+        return self._tile
+
+    @tile.setter
+    def tile(self, value):
+        self._tile = value
 
     def _set_tile_owner(self):
         self._tile.owner = self._owner
 
     def update(self, t):
         '''Redirect call to animated image.'''
-        self._image.update()
+        self._image.update(t)
+        self.rect = self._image.get_rect()
+
+    def move(self, path):
+        self._image.start_animation(path)
+
