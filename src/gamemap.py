@@ -122,6 +122,10 @@ class Tile(object):
         self._coord = tuple([v * utils.TILE_SIZE for v in pos])
         self._unit = None
 
+    def selectable(self):
+        '''We can only select unit or castle to buy units.'''
+        return self._unit or self.type is 'castle'
+
     @property
     def owner(self):
         return self._owner

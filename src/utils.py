@@ -99,3 +99,41 @@ def _load_config(filename):
             options['image'] = load_image(options['imagename'])
         sections[section] = options
     return sections
+
+class AnimatedImage(object):
+
+    def __init__(self, static, animated, fps = 30):
+        self._image = static
+        self._images = animated
+        self._current = self._image
+        self._animated = False
+
+    def __call__(self):
+        return self._current
+
+    def get_rect(self):
+        return self._current.get_rect()
+
+    def update(self, t):
+        if self._animated:
+            if t - self._last_update > self._delay:
+                self._frame += 1
+                if self._frame >= len(self._images):
+                    self._frame = 0
+                self.image = self._images[self._frame]
+                self._last_update = t
+
+    def start_animation(self):
+        # Track the time we started, and the time between updates.
+        # Then we can figure out when we have to switch the image.
+        self._animated = True
+        self._current = self._images[0]
+        self._start = pygame.time.get_ticks()
+        self._delay = 1000 / fps
+        self._last_update = 0
+        self._frame = 0
+        self.update(self._start)
+
+    def stop_animation(self):
+        self._animated = False
+        self._current = self._image

@@ -82,8 +82,9 @@ class Selection(pygame.sprite.Sprite):
 
     def select_or_move(self, pos):
         '''Determine tile that needs to be selected.'''
-        # TODO: check game rules here e. g. self._game.
-        self._selected_tile = self._map.tile_at_coord(*pos)
+        # TODO: check game rules here e. g. its unit belong to current player
+        if self._map.tile_at_coord(*pos).unit:
+            self._selected_tile = self._map.tile_at_coord(*pos)
 
     def unselect(self):
         self._selected_tile = None
