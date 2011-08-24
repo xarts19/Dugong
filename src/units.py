@@ -39,7 +39,9 @@ class UnitFactory(object):
             unit_types = self._unit_types_short
 
         # check if such type exist
-        assert unit_type in unit_types, "No such unit type: %s" % unit_type
+        if unit_type not in unit_types:
+            _LOGGER.exception("No such unit type: %s", unit_type)
+            return None
 
         # init info from type
         type_info = unit_types[unit_type]

@@ -49,9 +49,10 @@ class Game(object):
 
     def add_unit(self, unit_type, player, tile):
         unit = self._unit_factory.create_unit(unit_type, tile, player)
-        tile.unit = unit
-        self._units.append(unit)
-        player.add_unit(unit)
+        if unit:
+            tile.unit = unit
+            self._units.append(unit)
+            player.add_unit(unit)
 
 
     class _Player(object):

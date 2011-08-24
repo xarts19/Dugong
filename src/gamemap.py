@@ -35,7 +35,6 @@ class GameMap(object):
     @property
     def image(self):
         '''Return complete map image'''
-        assert self._image != None
         return self._image
 
     def load_level(self, level_map):
@@ -64,7 +63,8 @@ class GameMap(object):
         # blit each tile to image
         for i, row in enumerate(level):
             for j, tile in enumerate(row):
-                image.blit(tile.image, tile.coord)
+                if tile:
+                    image.blit(tile.image, tile.coord)
         return image
 
     def tile_at_coord(self, x, y):
@@ -125,7 +125,9 @@ class _TileFactory(object):
             tile_types = self._tile_types_short
 
         # check if such type exist
-        assert tile_type in tile_types, "No such tile type: %s" % tile_type
+        if tile_type not in tile_types:
+            _LOGGER.exception("No such tile type: %s", tile_type)
+            return None
 
         # init info from type
         type_info = tile_types[tile_type]
@@ -175,8 +177,8 @@ class Tile(object):
 
     @unit.setter
     def unit(self, value):
-        assert value is None or not self.unit, \
-               "Tile at (%s, %s) already occupied." % (self.pos)
+        if value is not None and self.unit:
+            _LOGGER.exception("Tile at %s already occupied.", self.pos)
         self._unit = value
 
     @property
