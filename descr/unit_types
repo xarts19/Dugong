@@ -1,27 +1,46 @@
 [general]
+name=general
+shortname=g
 imagename=general.png
 
 [swordsman]
+name=swordsman
+shortname=s
 imagename=swordsman.png
 
 [marksman]
+name=marksman
+shortname=m
 imagename=marksman.png
 
 [earthgolem]
+name=earthgolem
+shortname=e
 imagename=earthgolem.png
 
 [watergolem]
+name=watergolem
+shortname=w
 imagename=watergolem.png
 
 [catapult]
+name=catapult
+shortname=c
 imagename=catapult.png
 
 [dragon]
+name=dragon
+shortname=d
 imagename=dragon.png
 
 [skeleton]
+name=skeleton
+shortname=s
 imagename=skeleton.png
 
+
 [wizard]
+name=wizard
+shortname=w
 imagename=wizard.png
 

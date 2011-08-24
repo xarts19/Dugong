@@ -70,7 +70,7 @@ class Window(object):
     def _init_game(self):
         self._map = gamemap.GameMap()
         self._game = game.Game(self._map)
-        self._selection = gamemap.Selection(self._map)
+        self._selection = game.Selection(self._map)
         self._allsprites = pygame.sprite.RenderUpdates(self._game.units)
 
     def run(self):

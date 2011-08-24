@@ -25,11 +25,24 @@ class UnitFactory(object):
 
     def __init__(self):
         self._unit_types = utils.load_unit_types()
+        # same dict but with keys as shortnames
+        self._unit_types_short = {}
+        for name, unit in self._unit_types.items():
+            self._unit_types_short[unit['shortname']] = unit
 
     def create_unit(self, unit_type, tile, owner=None):
         '''Returns tile instance with attributes for provided type.'''
-        assert unit_type in self._unit_types, "No such unit type: %s" % unit_type
-        type_info = self._unit_types[unit_type]
+        # check what dict use: with shortnames or normal names
+        if len(unit_type) > 1:
+            unit_types = self._unit_types
+        else:
+            unit_types = self._unit_types_short
+
+        # check if such type exist
+        assert unit_type in unit_types, "No such unit type: %s" % unit_type
+
+        # init info from type
+        type_info = unit_types[unit_type]
         image = type_info['image']
         #defence = type_info['defence']
         #speed = type_info['speed']

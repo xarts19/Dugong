@@ -42,8 +42,8 @@ class GameMap(object):
         # create tiles from level definition
         for i, row in enumerate(level_map):
             tile_row = []
-            for j, tile_type_short in enumerate(row):
-                tile_row.append(tile_factory.create_tile(tile_type_short, (j, i)))
+            for j, tile_type in enumerate(row):
+                tile_row.append(tile_factory.create_tile(tile_type, (j, i)))
             level.append(tile_row)
         return level
 
@@ -72,33 +72,6 @@ class GameMap(object):
         return self._level[i][j]
 
 
-class Selection(pygame.sprite.Sprite):
-    """Object responsible for selection of tiles."""
-
-    def __init__(self, _map):
-        self._map = _map
-        self._green_image = utils.load_image('selection_green_bold.png')
-        self._orange_image = utils.load_image('selection_orange_bold.png')
-        self._mouse_coord = (0, 0)
-        self._TILE_SIZE = utils.TILE_SIZE
-        self._selected_tile = None
-
-    def mouse(self, pos):
-        ''''''
-        self._mouse_coord = self._map.tile_at_coord(*pos).coord
-
-    def select_or_move(self, pos):
-        # TODO: check game rules here e. g. self._game.
-        self._selected_tile = self._map.tile_at_coord(*pos)
-
-    def unselect(self):
-        self._selected_tile = None
-
-    def draw(self, image):
-        image.blit(self._green_image, self._mouse_coord)
-        if self._selected_tile:
-            image.blit(self._orange_image, self._selected_tile.coord)
-
 class _TileFactory(object):
     '''Manages creation of different tile types.
 
@@ -107,22 +80,30 @@ class _TileFactory(object):
 
     def __init__(self):
         self._tile_types = utils.load_tile_types()
-        # same dict but with keys as short names
+        # same dict but with keys as shortnames
         self._tile_types_short = {}
         for name, tile in self._tile_types.items():
-            tile['name'] = name
             self._tile_types_short[tile['shortname']] = tile
 
-    def create_tile(self, tile_type_short, pos):
+    def create_tile(self, tile_type, pos):
         '''Returns tile instance with attributes for provided type.'''
-        assert tile_type_short in self._tile_types_short, \
-               "No such tile type: %s" % tile_type_short
-        type_info = self._tile_types_short[tile_type_short]
+        # check what dict use: with shortnames or normal names
+        if len(tile_type) > 1:
+            tile_types = self._tile_types
+        else:
+            tile_types = self._tile_types_short
+
+        # check if such type exist
+        assert tile_type in tile_types, "No such tile type: %s" % tile_type
+
+        # init info from type
+        type_info = tile_types[tile_type]
         tile_type = type_info['name']
         image = type_info['image']
         defence = int(type_info['defence'])
         speed = int(type_info['speed'])
         heal = int(type_info['heal'])
+        # create tile
         tile = Tile(tile_type, image, defence, speed, heal, pos)
         return tile
 
