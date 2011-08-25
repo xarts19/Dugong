@@ -85,7 +85,11 @@ class Selection(pygame.sprite.Sprite):
             self._pointed_tile = new_tile
             if self._selected_tile and self._pointed_tile:
                 self._draw_path()
-            
+
+    def is_selectable(self, tile):
+        '''We can only select unit or castle to buy units.'''
+        return tile.unit or tile.type is 'castle'
+
     def select_or_move(self, pos):
         '''Determine what to do depending on game state and selected tile.'''
         # TODO: check game rules here e. g. its unit belong to current
@@ -93,13 +97,13 @@ class Selection(pygame.sprite.Sprite):
         # TODO: check if player want to attack
         self.mouse(pos)
         # select
-        if self._pointed_tile.selectable():
+        if self.is_selectable(self._pointed_tile):
             # select tile
             self._selected_tile = self._map.tile_at_coord(*pos)
             return
         # move
         if self._selected_tile and self._selected_tile.unit \
-                and not self._pointed_tile.unit and self._path_is_valid:
+                and not self._pointed_tile.unit:
             self._move()
             return
 
@@ -110,8 +114,8 @@ class Selection(pygame.sprite.Sprite):
     def _find_path(self):
         orig = self._selected_tile
         dest = self._pointed_tile
-        self._path, self._path_is_valid = self._map.find_path(orig, dest)
-        
+        self._path = self._map.find_path(orig, dest)
+
     def _move(self):
         dest = self._path[-1]
         self._selected_tile.unit.move(self._path)

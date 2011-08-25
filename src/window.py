@@ -19,9 +19,7 @@ except ImportError as ex:
 if not pygame.font: LOGGER.warning('Fonts disabled')
 if not pygame.mixer: LOGGER.warning('Sound disabled')
 
-import gamemap
-import units
-import game
+from gamestates import GameStateManager
 import utils
 
 __author__ = "Xarts19 (xarts19@gmail.com)"
@@ -41,15 +39,20 @@ class Window(object):
         # load and set up pygame
         pygame.init()
 
+        # detect display resolution and shrink resolution if needed
+        info = pygame.display.Info()
+        displ_w, displ_h = info.current_w, info.current_h
+        wnd_w, wnd_h = utils.SCREEN_SIZE
+        if displ_w < wnd_w or displ_h < wnd_h:
+            wnd_w, wnd_h = displ_w - 50, displ_h - 50
+            utils.SCREEN_SIZE = wnd_w, wnd_h
+
         # create our window
+        self.window = pygame.display.set_mode(utils.SCREEN_SIZE)
 
-        # initial window position
-        os.environ['SDL_VIDEO_WINDOW_POS'] = '100,100'
-
-        screen_size = utils.SCREEN_SIZE
-
-        self.window = pygame.display.set_mode(screen_size, pl.DOUBLEBUF)
-        self.image = pygame.Surface(screen_size)
+        # initial window position at the center of the screen
+        center_x, center_y = (displ_w - wnd_w) / 2, (displ_h - wnd_h) / 2
+        os.environ['SDL_VIDEO_WINDOW_POS'] = str(center_x) + ',' + str(center_y)
 
         # clock for ticking
         self.clock = pygame.time.Clock()
@@ -63,15 +66,9 @@ class Window(object):
         # tell pygame to only pay attention to certain events
         # we want to know if the user hits the X on the window, and we
         # want keys so we can close the window with the esc key
-        pygame.event.set_allowed([pl.QUIT, pl.KEYDOWN])
+        #pygame.event.set_allowed([])
 
-        self._init_game()
-
-    def _init_game(self):
-        self._map = gamemap.GameMap()
-        self._selection = game.Selection(self._map)
-        self._game = game.Game(self._map, self._selection)
-        self._allsprites = pygame.sprite.RenderUpdates(self._game.units)
+        self._game_state = GameStateManager()
 
     def run(self):
         """Runs the game. Contains the game loop that computes and renders
@@ -90,48 +87,12 @@ class Window(object):
             # update the title bar with our frames per second
             pygame.display.set_caption('Ancient Empires, %d fps' % self.clock.get_fps())
 
-            # draw map
-            self.image.fill((255, 225, 255))
-            self.image.blit(self._map.image, (0, 0))
-            # update units and draw them
-            self.draw_units(self.image)
-            # draw cursors
-            self.draw_selections(self.image)
+            # standard game loop
+            running = self._game_state.handle_events(pygame.event.get())
+            image = self._game_state.get_rendered_screen()
 
-            self.window.blit(self.image, (0, 0))
-            # render the screen, even though we don't have anything going on right now
+            # blit and render the screen
+            self.window.blit(image, (0, 0))
             pygame.display.flip()
 
-            # handle pygame events -- if user closes game, stop running
-            running = self.handleEvents()
-
         LOGGER.debug('Game finished')
-
-    def draw_units(self, image):
-        self._allsprites.empty()
-        self._allsprites.add(self._game.units)
-        self._allsprites.update(pygame.time.get_ticks())
-        self._allsprites.draw(image)
-
-    def draw_selections(self, image):
-        '''Draw selection on the block that mouse points to and currently selected block.'''
-        self._selection.mouse(pygame.mouse.get_pos())
-        self._selection.draw(image)
-
-    def handleEvents(self):
-        """Poll for PyGame events and behave accordingly. Return false to stop
-        the event loop and end the game."""
-
-        # poll for pygame events
-        for event in pygame.event.get():
-            if event.type == pl.QUIT:
-                return False
-
-            # handle user input
-            elif event.type == pl.MOUSEBUTTONUP:
-                self._selection.select_or_move(pygame.mouse.get_pos())
-            elif event.type == pl.KEYDOWN:
-                # if the user presses escape, quit the event loop.
-                if event.key == pl.K_ESCAPE:
-                    self._selection.unselect()
-        return True

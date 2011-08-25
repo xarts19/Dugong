@@ -20,7 +20,7 @@ _LOGGER = logging.getLogger('main.utils')
 GAME_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 IMAGES_DIR = os.path.join(GAME_DIR, 'images')
 DESCR_DIR = os.path.join(GAME_DIR, 'descr')
-SCREEN_SIZE = (700, 500)
+SCREEN_SIZE = (1280, 720)
 TILE_SIZE = 50
 
 
@@ -37,17 +37,33 @@ def load_image(name, colorkey=None):
         image = pygame.Surface((TILE_SIZE, TILE_SIZE))
         image.fill((255, 0, 0, 255))
         colorkey = None
-    # convert for faster blitting
-    if os.path.splitext(name)[0] == '.png':
-        image = image.convert_alpha()
-    else:
-        image = image.convert()
+    try:
+        # convert for faster blitting
+        if os.path.splitext(name)[0] == '.png':
+            image = image.convert_alpha()
+        else:
+            image = image.convert()
+    except:
+        _LOGGER.exception('pygame not initialized')
     # optionally set transparent color
     # if -1 is passes as color, use first pixel
     if colorkey is not None:
         if colorkey is (-1):
             colorkey = image.get_at((0, 0))
         image.set_colorkey(colorkey, pl.RLEACCEL)
+    return image
+
+def _concatenate_image(level):
+    '''Return image of whole level built from tiles.'''
+    tile_width = tile_height = TILE_SIZE
+    map_width = len(level[0]) * tile_width
+    map_height = len(level) * tile_height
+    image = pygame.Surface((map_width, map_height))
+    # blit each tile to image
+    for row in level:
+        for tile in row:
+            if tile:
+                image.blit(tile.image, tile.coord)
     return image
 
 def load_level_info(name, levels_file='levels'):

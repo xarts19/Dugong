@@ -20,9 +20,9 @@ class GameMap(object):
     '''Stores map image and array. Loads levels.'''
 
     def __init__(self):
-        self._TILE_SIZE = utils.TILE_SIZE
         self._level = None
         self._image = None
+        self._tile_factory = _TileFactory()
 
     def __repr__(self):
         occupied_tiles = []
@@ -39,38 +39,13 @@ class GameMap(object):
 
     def load_level(self, level_map):
         '''Reinitialize map with new level.'''
-        self._level = self._init_level(level_map)
-        self._image = self._generate_image(self._level)
-
-    def _init_level(self, level_map):
-        '''Return level object (2d array) read from file'''
-        level = []
-        tile_factory = _TileFactory()
-        # create tiles from level definition
-        for i, row in enumerate(level_map):
-            tile_row = []
-            for j, tile_type in enumerate(row):
-                tile_row.append(tile_factory.create_tile(tile_type, (i, j)))
-            level.append(tile_row)
-        return level
-
-    def _generate_image(self, level):
-        '''Return image of whole level built from tiles.'''
-        tile_width = tile_height = self._TILE_SIZE
-        map_width = len(level[0]) * tile_width
-        map_height = len(level) * tile_height
-        image = pygame.Surface((map_width, map_height))
-        # blit each tile to image
-        for i, row in enumerate(level):
-            for j, tile in enumerate(row):
-                if tile:
-                    image.blit(tile.image, tile.coord)
-        return image
+        self._level = _init_level(level_map, self._tile_factory)
+        self._image = utils._concatenate_image(self._level)
 
     def tile_at_coord(self, x, y):
         '''Return tile object at pixel coords.'''
-        i = y / self._TILE_SIZE
-        j = x / self._TILE_SIZE
+        i = y / utils.TILE_SIZE
+        j = x / utils.TILE_SIZE
         return self.tile_at_pos(i, j)
 
     def tile_at_pos(self, i, j):
@@ -101,7 +76,21 @@ class GameMap(object):
         for j in my_range(orig_j, dest_j):
             path.append(self._level[dest_i][j])
         path.append(dest)
-        return path, True
+        return path
+
+
+# helper function for GameMap class
+def _init_level(level_map, tile_factory):
+    '''Construct 2d array of Tiles from 2d array of tile types.'''
+    level = []
+    # create tiles from level definition
+    for i, row in enumerate(level_map):
+        tile_row = []
+        for j, tile_type in enumerate(row):
+            tile_row.append(tile_factory.create_tile(tile_type, (i, j)))
+        level.append(tile_row)
+    return level
+
 
 class _TileFactory(object):
     '''Manages creation of different tile types.
@@ -157,10 +146,6 @@ class Tile(object):
 
     def __repr__(self):
         return "Tile at (%s, %s)" % self._pos
-
-    def selectable(self):
-        '''We can only select unit or castle to buy units.'''
-        return self._unit or self.type is 'castle'
 
     @property
     def owner(self):
