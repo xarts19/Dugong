@@ -8,6 +8,7 @@ __author__ = "Xarts19 (xarts19@gmail.com)"
 __version__ = "Version: 0.0.1 "
 __date__ = "Date: 2011-08-25 14:09:03.019252 "
 
+from pymock import *
 import unittest
 import sys
 sys.path.insert(0, '../src/')
@@ -57,6 +58,25 @@ class TestGameStateManager(unittest.TestCase):
         screen = manager.get_rendered_screen()
         self.assertTrue(isinstance(screen, pygame.Surface), "Not valid pygame.Surface returned")
 
+    def test_update_and_get_image_is_called(self):
+        # holds all mock objects
+        mocker = Controller()
+        # mock object to be used in tested routine instead of real thing
+        mocked_game_state = mocker.mock()
+        # record exactly how mock object should be used in tested routine
+        mocked_game_state.update()
+        mocked_game_state.get_image((500, 500))
+        # prepare it for real use
+        mocker.replay()
+        # init states
+        manager = GameStateManager()
+        manager.state = "Mock"
+        manager._states["Mock"] = mocked_game_state
+        # call tested routine
+        screen = manager.get_rendered_screen((500, 500))
+        # test if it was used right
+        mocker.verify()
+
 class TestGameStateMainMenu(unittest.TestCase):
 
     def setUp(self):
@@ -81,7 +101,7 @@ class TestGameStateGame(unittest.TestCase):
 
     def test_get_rendered_screen_correct_size(self):
         screen = self.manager.get_rendered_screen((500, 500))
-        self.assertTrue(screen.get_size == (500, 500), "Returned image is not of correct size")
+        self.assertEqual(screen.get_size, (500, 500), "Returned image is not of correct size")
 
     def test_handle_events_changes_state(self):
         events = [pygame.event.Event(pygame.locals.QUIT)]

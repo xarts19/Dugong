@@ -74,9 +74,8 @@ class _Game(object):
         self._init_game()
 
     def _init_game(self):
-        self._map = gamemap.GameMap()
-        self._selection = game.Selection(self._map)
-        self._game = game.Game(self._map, self._selection)
+        self._game = game.Game()
+        self._selection = self._game.selection
         self._allsprites = pygame.sprite.RenderUpdates(self._game.units)
 
     def handle_events(self, events):
@@ -105,7 +104,7 @@ class _Game(object):
         # TODO: add some background image here
         self._image.fill((255, 225, 255))
         # draw map
-        self._image.blit(self._map.image, (0, 0))
+        self._image.blit(self._game.map_image, (0, 0))
         # update units and draw them
         self.draw_units(self._image)
         # draw cursors

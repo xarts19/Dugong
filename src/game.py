@@ -21,10 +21,10 @@ _LOGGER = logging.getLogger('main.game')
 class Game(object):
     '''Represents current game state.'''
 
-    def __init__(self, _map, selection):
+    def __init__(self):
         _LOGGER.debug('Initializing game map')
-        self._map = _map
-        self._selection = selection
+        self._map = gamemap.GameMap()
+        self._selection = Selection(self._map)
         self._unit_factory = units.UnitFactory()
         self._players = [self._Player(), self._Player()]
         self._units = []
@@ -42,6 +42,14 @@ class Game(object):
             for j, unit_type in enumerate(row):
                 if unit_type != '.':
                     self.add_unit(unit_type, player, self._map.tile_at_pos(i, j))
+
+    @property
+    def map_image(self):
+        return self._map.image
+
+    @property
+    def selection(self):
+        return self._selection
 
     @property
     def units(self):
