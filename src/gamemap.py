@@ -50,7 +50,8 @@ class GameMap(object):
 
     def tile_at_pos(self, i, j):
         '''Return tile object at matrix coords.'''
-        if len(self._level) > i and len(self._level[i]) > j:
+        if len(self._level) > i and len(self._level[i]) > j \
+                and i >= 0 and j >= 0:
             return self._level[i][j]
         else:
             # "Accesing tile outside of bounds: (%s, %s)", i, j
@@ -71,11 +72,14 @@ class GameMap(object):
             else:
                 return range(start, stop, -1)
 
-        for i in my_range(orig_i, dest_i):
-            path.append(self._level[i][orig_j])
-        for j in my_range(orig_j, dest_j):
-            path.append(self._level[dest_i][j])
-        path.append(dest)
+        #for i in my_range(orig_i, dest_i):
+        #    path.append(self._level[i][orig_j])
+        #for j in my_range(orig_j, dest_j):
+        #    path.append(self._level[dest_i][j])
+        path = [orig,
+                self._level[orig_i][dest_j],
+                dest]
+        #path.append(dest)
         return path
 
 

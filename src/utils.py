@@ -24,14 +24,14 @@ SCREEN_SIZE = (1280, 720)
 TILE_SIZE = 50
 
 
-def load_image(name, colorkey=None):
+def load_image(name, colorkey=None, size=(TILE_SIZE, TILE_SIZE)):
     '''Load image. Uses red box as fallback.'''
     fullname = os.path.join(IMAGES_DIR, name)
     # if image wasn't found, use red box as fallback
     try:
         image = pygame.image.load(fullname)
-        w, h = image.get_size()
-        image = pytrans.scale(image, (TILE_SIZE, TILE_SIZE))
+        if size:
+            image = pytrans.scale(image, size)
     except pygame.error, message:
         _LOGGER.exception("Can't load image: %s", message)
         image = pygame.Surface((TILE_SIZE, TILE_SIZE))
@@ -143,23 +143,23 @@ class AnimatedImage(object):
                 if self._frame >= len(self._images):
                     self._frame = 0
                 self._current = self._images[self._frame]
+                # move image
+                if self._path['current'] == len(self._path['path']) - 1:
+                    self._rect.topleft = self._path['path'][-1]
+                    self.stop_animation()
+                else:
+                    self._path['current'] += 1
+                    self._rect.topleft = self._path['path'][self._path['current']]
                 self._last_update = t
-            # move image
-            if self._path['current'] == len(self._path['path']) - 1:
-                self._rect.topleft = self._path['path'][-1]
-                self.stop_animation()
-            else:
-                self._path['current'] += 1
-                self._rect.topleft = self._path['path'][self._path['current']]
 
-    def start_animation(self, path, fps=30):
+    def start_animation(self, path, fps=60):
         # Track the time we started, and the time between updates.
         # Then we can figure out when we have to switch the image.
         self._animated = True
         self._path = self.create_pixel_path(path)
         self._current = self._images[0]
         #self._start = pygame.time.get_ticks()
-        self._delay = 5000 / fps
+        self._delay = 1000 / fps
         self._last_update = 0
         self._frame = 0
         self.update(pygame.time.get_ticks())
@@ -169,11 +169,14 @@ class AnimatedImage(object):
         for tile1, tile2 in zip(path[:-1], path[1:]):
             x1, y1 = tile1.coord
             x2, y2 = tile2.coord
-            num_steps = 10
-            dx = (x2 - x1) / float(num_steps)
-            dy = (y2 - y1) / float(num_steps)
-            for i in range(num_steps):
-                pixel_path['path'].append((x1 + dx * i, y1 + dy * i))
+            # WARNINIG: alg works only for 20 steps
+            l_x = (x2 - x1) / 100.0
+            l_y = (y2 - y1) / 100.0
+            for i in range(20):
+                delta = abs(abs(i - 10) - 10)
+                x1 += delta * l_x
+                y1 += delta * l_y
+                pixel_path['path'].append((x1, y1))
         pixel_path['path'].append(path[-1].coord)
         return pixel_path
 

@@ -15,6 +15,7 @@ import utils
 
 import pygame
 import pygame.locals as pl
+MOUSE_LEFT = 1
 
 class GameStateManager(object):
 
@@ -24,30 +25,47 @@ class GameStateManager(object):
                       "InGameMenu" : _InGameMenu(self),
                        }
         self.state = "MainMenu"
+        self._menu_transition = 0
 
     def handle_events(self, events):
         return self._states[self.state].handle_events(events)
 
-    def get_rendered_screen(self, size=None):
-        if size is None:
-            size = utils.SCREEN_SIZE
+    def get_rendered_screen(self):
         self._states[self.state].update()
-        image = None
-        if self.state == "InGameMenu":
-            game_image = self._states["Game"].get_image(size)
-            menu_image = self._states["InGameMenu"].get_image(size)
-            menu_image.set_alpha(200)
-            game_image.blit(menu_image, (0, 0))
-            image = game_image
-        else:
-            image = self._states[self.state].get_image(size)
+        image = self._transition()
+        if not image:
+            image = self._states[self.state].get_image()
         return image
 
+    def _transition(self):
+        '''Cool transition effect.'''
+        if self.state == "InGameMenu" and self._menu_transition < 32:
+            if self._menu_transition < 31:
+                self._menu_transition += 1
+            game_image = self._states["Game"].get_image()
+            menu_image = self._states["InGameMenu"].get_image()
+            game_image.set_alpha(255 - self._menu_transition * 5)
+            menu_image.set_alpha(self._menu_transition * 6)
+        elif self.state == "Game" and self._menu_transition > 0:
+            self._menu_transition -= 1
+            game_image = self._states["Game"].get_image()
+            menu_image = self._states["InGameMenu"].get_image()
+            game_image.set_alpha(255 - self._menu_transition * 5)
+            menu_image.set_alpha(self._menu_transition * 6)
+        else:
+            return None
+        image = pygame.Surface(utils.SCREEN_SIZE)
+        image.blit(game_image, (0, 0))
+        image.blit(menu_image, (0, 0))
+        return image
 
 class _MainMenu(object):
 
     def __init__(self, state_manager):
         self._state_manager = state_manager
+        self._init_graphics()
+
+    def _init_graphics(self):
         self._image = pygame.Surface(utils.SCREEN_SIZE)
 
     def handle_events(self, events):
@@ -62,7 +80,7 @@ class _MainMenu(object):
     def update(self):
         pass
 
-    def get_image(self, size):
+    def get_image(self):
         return self._image
 
 
@@ -70,71 +88,185 @@ class _Game(object):
 
     def __init__(self, state_manager):
         self._state_manager = state_manager
-        self._image = pygame.Surface(utils.SCREEN_SIZE)
         self._init_game()
+        self._init_graphics()
 
     def _init_game(self):
         self._game = game.Game()
         self._selection = self._game.selection
         self._allsprites = pygame.sprite.RenderUpdates(self._game.units)
 
+    def _init_graphics(self):
+        self._background = utils.load_image('game_background.jpg', size=utils.SCREEN_SIZE)
+        # calculate map shift from the edge of the screen
+        size = utils.SCREEN_SIZE
+        w, h = self._game.map_image.get_size()
+        self._shift = (size[0] - w) / 2, (size[1] - h) / 2
+        # surface for map and units
+        self._image = pygame.Surface((w, h))
+
     def handle_events(self, events):
         """Return false to stop the event loop and end the game."""
-
-        # poll for pygame events
         for event in events:
             if event.type == pl.QUIT:
                 self._state_manager.state = "InGameMenu"
-
-            # handle user input
             elif event.type == pl.MOUSEBUTTONUP:
-                self._selection.select_or_move(pygame.mouse.get_pos())
+                if event.button == MOUSE_LEFT:
+                    self._selection.select_or_move(self._to_map_coords(pygame.mouse.get_pos()))
             elif event.type == pl.KEYDOWN:
                 if event.key == pl.K_ESCAPE:
-                    self._selection.unselect()
-                else:
-                    self._state_manager.state = "InGameMenu"
+                    if self._selection.smth_selected():
+                        self._selection.unselect()
+                    else:
+                        self._state_manager.state = "InGameMenu"
         return True
 
     def update(self):
-        #
-        self._render_image()
+        self._selection.mouse(self._to_map_coords(pygame.mouse.get_pos()))
+        self._allsprites.empty()
+        self._allsprites.add(self._game.units)
+        self._allsprites.update(pygame.time.get_ticks())
+        pass
 
     def _render_image(self):
-        # TODO: add some background image here
-        self._image.fill((255, 225, 255))
         # draw map
         self._image.blit(self._game.map_image, (0, 0))
         # update units and draw them
         self.draw_units(self._image)
         # draw cursors
         self.draw_selections(self._image)
+        # draw screen
+        self._background.blit(self._image, self._from_map_coords((0, 0)))
+        return self._background
 
     def draw_units(self, image):
-        self._allsprites.empty()
-        self._allsprites.add(self._game.units)
-        self._allsprites.update(pygame.time.get_ticks())
         self._allsprites.draw(image)
 
     def draw_selections(self, image):
         '''Draw selection on the block that mouse points to and currently selected block.'''
-        self._selection.mouse(pygame.mouse.get_pos())
         self._selection.draw(image)
 
+    def _to_map_coords(self, pos):
+        return pos[0] - self._shift[0], pos[1] - self._shift[1]
 
-    def get_image(self, size):
-        # TODO: handle screen resolutions
-        return self._image
+    def _from_map_coords(self, pos):
+        return pos[0] + self._shift[0], pos[1] + self._shift[1]
+
+    def get_image(self):
+        return self._render_image()
 
 
 class _InGameMenu(object):
 
     def __init__(self, state_manager):
         self._state_manager = state_manager
+        self._init_graphics()
+        self._exit_flag = False
+
+    def _init_graphics(self):
+        self._background = pygame.Surface((utils.SCREEN_SIZE))
+        self._background = utils.load_image('in_game_menu.jpg', size=utils.SCREEN_SIZE)
+        self._image = pygame.Surface((utils.SCREEN_SIZE))
+        #self._image.set_alpha(230)
+        menu_items = (("Resume game", self._resume_game),
+                      ("Exit game", self._exit_game),
+                      )
+        self._menu = _Menu(menu_items)
+
+    def _render_image(self):
+        self._image.fill((0,0,0,155))
+        self._image.blit(self._background, (0, 0))
+        self._menu.draw(self._image)
+        return self._image
+
+    def _resume_game(self):
+        self._state_manager.state = "Game"
+
+    def _exit_game(self):
+        self._exit_flag = True
+
+    def handle_events(self, events):
+        if self._exit_flag:
+            return False
+        for event in events:
+            if event.type == pl.QUIT:
+                return False
+            elif event.type == pl.MOUSEBUTTONUP:
+                if event.button == MOUSE_LEFT:
+                    self._menu.execute()
+            elif event.type == pl.KEYDOWN:
+                if event.key == pl.K_ESCAPE:
+                    self._resume_game()
+        return True
 
     def update(self):
-        pass
+        mouse_pos = pygame.mouse.get_pos()
+        self._menu.check_selected(mouse_pos)
 
-    def get_image(self, size):
-        return None
+    def get_image(self):
+        return self._render_image()
+
+class _Menu(object):
+
+    def __init__(self, entries, color=(255, 0, 0), select_color=(0, 0, 255)):
+        self._font = pygame.font.Font(pygame.font.get_default_font(), 36)
+        self.color = color
+        self.select_color = select_color
+        self._items = []
+        for name, fnc in entries:
+            self._items.append(self.MenuItem(name, fnc, self._font))
+
+        # find total height of menus to know how far from top to start
+        # drawing
+        # also need to know width of the biggest menu entry to place
+        # at the center of x
+        max_w = 0
+        total_h = 0
+        for entry in self._items:
+            w, h = entry.size
+            total_h += h + 10
+            if w > max_w: max_w = w
+        scr_w, scr_h = utils.SCREEN_SIZE
+        # find starting coord for x and y
+        self.topleft = (scr_w - max_w) / 2, (scr_h - total_h) / 2
+
+    def draw(self, image):
+        '''Draw every entry.'''
+        x, y = self.topleft
+        for entry in self._items:
+            color = self.select_color if entry.selected else self.color
+            entry.rect = x, y
+            image.blit(entry.render(color), (x, y))
+            y += entry.size[1]
+
+    def check_selected(self, mouse_pos):
+        mouse_x, mouse_y = mouse_pos
+        for entry in self._items:
+            x, y = entry.rect
+            w, h = entry.size
+            if 0 < mouse_x - x < w and 0 < mouse_y - y < h:
+                entry.selected = True
+            else:
+                entry.selected = False
+
+    def execute(self):
+        for entry in self._items:
+            if entry.selected:
+                entry.fnc()
+                return
+
+    class MenuItem(object):
+
+        def __init__(self, name, fnc, font):
+            self._font = font
+            self.name = name
+            self.fnc = fnc
+            self.rect = 0, 0
+            self.selected = False
+            image = self._font.render(name, True, (0, 0, 0))
+            self.size = image.get_size()
+
+        def render(self, color, antialias=True):
+            image = self._font.render(self.name, antialias, color)
+            return image
 

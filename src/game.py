@@ -98,6 +98,9 @@ class Selection(pygame.sprite.Sprite):
         '''We can only select unit or castle to buy units.'''
         return tile.unit or tile.type is 'castle'
 
+    def smth_selected(self):
+        return self._selected_tile != None
+
     def select_or_move(self, pos):
         '''Determine what to do depending on game state and selected tile.'''
         # TODO: check game rules here e. g. its unit belong to current
@@ -116,6 +119,7 @@ class Selection(pygame.sprite.Sprite):
             return
 
     def _draw_path(self):
+        '''Draw dots on the map for current path.'''
         self._find_path()
         # TODO: check for path validity and draw in red if not valid
 
