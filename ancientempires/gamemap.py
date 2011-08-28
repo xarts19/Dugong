@@ -94,23 +94,26 @@ class GameMap(object):
         and if path is valid for this unit.
         Orig and dest is included.
         '''
-        def find(i, j, moves, dest):
-            if moves < 0:
-                return None
-            # dest found: backtrack
-            if self.tile_at_pos(i, j) is dest:
-                return [dest]
-            # try each direction
-            for di, dj in ((0, 1), (1, 0), (0, -1), (-1, 0)):
-                tile = self.tile_at_pos(i + di, j + dj)
-                if tile:
-                    moves_left = moves - tile.pass_cost
-                    if tile.type is not 'water' and not tile.unit and moves_left >= 0:
-                        res = find(i + di, j + dj, moves_left, dest)
-                        # dest found: backtrack
-                        if res != None:
-                            res.insert(0, self.tile_at_pos(i, j))
-                            return res
+
+        def find(start_i, start_j, moves, dest):
+            '''Breadth first search for path from i, j to dest.'''
+            final_path = []
+            fringe = [([(start_i, start_j)], moves)]
+            while len(fringe) > 0:
+                path = fringe[0]
+                del fringe[0]
+                for di, dj in ((0, 1), (1, 0), (0, -1), (-1, 0)):
+                    i, j = path[0][-1]
+                    tile = self.tile_at_pos(i + di, j + dj)
+                    if tile:
+                        moves_left = path[1] - tile.pass_cost
+                        if tile.type is not 'water' and not tile.unit and moves_left >= 0:
+                            if tile is dest:
+                                final_path = path[0] + [(i + di, j + dj)]
+                                fringe = []
+                                break
+                            fringe.append((path[0]+[(i + di, j + dj)], moves_left))
+            return [self.tile_at_pos(i, j) for i, j in final_path]
 
         moves = orig.unit.moves_left
         path = find(orig.pos[0], orig.pos[1], moves, dest)
