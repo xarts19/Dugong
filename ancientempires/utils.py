@@ -156,7 +156,7 @@ class AnimatedImage(object):
         # Track the time we started, and the time between updates.
         # Then we can figure out when we have to switch the image.
         self._animated = True
-        self._path = self.create_pixel_path(path)
+        self._path = create_pixel_path(path)
         self._current = self._images[0]
         #self._start = pygame.time.get_ticks()
         self._delay = 1000 / fps
@@ -164,22 +164,46 @@ class AnimatedImage(object):
         self._frame = 0
         self.update(pygame.time.get_ticks())
 
-    def create_pixel_path(self, path):
-        pixel_path = {'current':0, 'path':[]}
-        for tile1, tile2 in zip(path[:-1], path[1:]):
-            x1, y1 = tile1.coord
-            x2, y2 = tile2.coord
-            # WARNINIG: alg works only for 20 steps
-            l_x = (x2 - x1) / 100.0
-            l_y = (y2 - y1) / 100.0
-            for i in range(20):
-                delta = abs(abs(i - 10) - 10)
-                x1 += delta * l_x
-                y1 += delta * l_y
-                pixel_path['path'].append((x1, y1))
-        pixel_path['path'].append(path[-1].coord)
-        return pixel_path
 
     def stop_animation(self):
         self._animated = False
         self._current = self._image
+
+
+def create_pixel_path(path):
+    '''Create path in pixels from path in tiles.'''
+    pixel_path = {'current':0, 'path':[]}
+    path = straighten_path(path)
+    for tile1, tile2 in zip(path[:-1], path[1:]):
+        x1, y1 = tile1.coord
+        x2, y2 = tile2.coord
+        # WARNINIG: alg works only for 20 steps
+        l_x = (x2 - x1) / 100.0
+        l_y = (y2 - y1) / 100.0
+        for i in range(20):
+            delta = abs(abs(i - 10) - 10)
+            x1 += delta * l_x
+            y1 += delta * l_y
+            pixel_path['path'].append((x1, y1))
+    pixel_path['path'].append(path[-1].coord)
+    return pixel_path
+
+
+def straighten_path(path):
+    '''Join straight segments of the path.'''
+    straight_path = [path[0]]
+    i = 0
+    j = 1
+    while j + 1 < len(path):
+        x1, y1 = path[i].pos
+        x2, y2 = path[j].pos
+        x3, y3 = path[j + 1].pos
+        if x1 == x2 == x3 or y1 == y2 == y3:
+            j += 1
+        else:
+            straight_path.append(path[j])
+            i = j
+            j += 1
+    straight_path.append(path[-1])
+    return straight_path
+
