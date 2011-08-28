@@ -3,54 +3,53 @@ name=general
 shortname=g
 imagename=general.png
 #animation=general2.png,general3.png,general4.png,general5.png,general6.png,general7.png,general8.png,general9.png
-max_moves=5      # on the road
+max_moves=5
 
 [swordsman]
 name=swordsman
 shortname=s
 imagename=swordsman.png
-max_moves=5      # on the road
+max_moves=5
 
 [marksman]
 name=marksman
 shortname=m
 imagename=marksman.png
-max_moves=5      # on the road
+max_moves=5
 
 [earthgolem]
 name=earthgolem
 shortname=e
 imagename=earthgolem.png
-max_moves=5      # on the road
+max_moves=5
 
 [watergolem]
 name=watergolem
 shortname=w
 imagename=watergolem.png
-max_moves=5      # on the road
+max_moves=5
 
 [catapult]
 name=catapult
 shortname=c
 imagename=catapult.png
-max_moves=5      # on the road
+max_moves=5
 
 [dragon]
 name=dragon
 shortname=d
 imagename=dragon.png
-max_moves=10      # on the road
+max_moves=10
 
 [skeleton]
 name=skeleton
 shortname=s
 imagename=skeleton.png
-max_moves=5      # on the road
-
+max_moves=5
 
 [wizard]
 name=wizard
 shortname=w
 imagename=wizard.png
-max_moves=5      # on the road
+max_moves=5
 

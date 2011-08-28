@@ -3,7 +3,7 @@ name=land
 shortname=l
 imagename=land.jpg
 defence=15
-speed=75
+pass_cost=1.5
 heal=0
 owner=none
 
@@ -12,7 +12,7 @@ name=forest
 shortname=f
 imagename=forest.jpg
 defence=35
-speed=50
+pass_cost=2
 heal=0
 owner=none
 
@@ -21,7 +21,7 @@ name=road
 shortname=r
 imagename=road.jpg
 defence=0
-speed=100
+pass_cost=1
 heal=0
 owner=none
 
@@ -30,7 +30,7 @@ name=bridge
 shortname=b
 imagename=bridge.jpg
 defence=0
-speed=100
+pass_cost=1
 heal=0
 owner=none
 
@@ -39,7 +39,7 @@ name=mountain
 shortname=m
 imagename=mountain.jpg
 defence=50
-speed=50
+pass_cost=3
 heal=0
 owner=none
 
@@ -48,7 +48,7 @@ name=water
 shortname=w
 imagename=water.jpg
 defence=0
-speed=0
+pass_cost=10
 heal=0
 owner=none
 
@@ -57,7 +57,7 @@ name=house
 shortname=h
 imagename=house.jpg
 defence=50
-speed=100
+pass_cost=1
 heal=25
 owner=none
 
@@ -66,7 +66,7 @@ name=castle
 shortname=c
 imagename=castle.jpg
 defence=50
-speed=100
+pass_cost=1
 heal=25
 owner=none
 

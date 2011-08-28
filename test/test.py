@@ -11,12 +11,12 @@ __date__ = "Date: 2011-08-25 14:09:03.019252 "
 from pymock import *
 import unittest
 import sys
-sys.path.insert(0, '../src/')
+sys.path.insert(0, '../')
 
 import pygame
 
-from gamemap import GameMap
-from gamestates import GameStateManager
+from ancientempires.gamemap import GameMap
+from ancientempires.gamestates import GameStateManager
 
 class TestGameMap(unittest.TestCase):
 
