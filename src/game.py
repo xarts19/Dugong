@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-
+All game logic and constraints is here.
 """
 
 import logging
@@ -26,11 +26,19 @@ class Game(object):
         self._map = gamemap.GameMap()
         self._selection = Selection(self._map)
         self._unit_factory = units.UnitFactory()
-        self._players = [self._Player(), self._Player()]
-        self._units = []
+        self._players = Players([Player('Xarts'), Player('Zagor')])
+        # FIXME: find where to put this
         self.load_level(1)
+        # works only after level was loaded (needs to know map size):
+        self._init_graphics()
+
+    def _init_graphics(self):
+        '''Create surface for map, units and effects.'''
+        w, h = self.get_map_size()
+        self._image = pygame.Surface((w, h))
 
     def load_level(self, level_num):
+        '''Load level from file with given number. Init map and units.'''
         level_name = 'level_' + str(level_num)
         level_info = utils.load_level_info(level_name)
         self._map.load_level(level_info['map'])
@@ -38,85 +46,134 @@ class Game(object):
         self._init_units(level_info['units_2'], self._players[1])
 
     def _init_units(self, level_units, player):
+        '''Create units from level specs for given player.'''
         for i, row in enumerate(level_units):
             for j, unit_type in enumerate(row):
                 if unit_type != '.':
-                    self.add_unit(unit_type, player, self._map.tile_at_pos(i, j))
+                    self._add_unit(unit_type, player,
+                                   self._map.tile_at_pos(i, j))
 
-    @property
-    def map_image(self):
-        return self._map.image
-
-    @property
-    def selection(self):
-        return self._selection
-
-    @property
-    def units(self):
-        return self._units
-
-    def add_unit(self, unit_type, player, tile):
+    def _add_unit(self, unit_type, player, tile):
+        '''Add unit to tile, _units and player'''
         unit = self._unit_factory.create_unit(unit_type, tile, player)
         if unit:
             tile.unit = unit
-            self._units.append(unit)
-            player.add_unit(unit)
+            player.add(unit)
+
+    def get_map_size(self):
+        return self._map.image.get_size()
+
+    def update(self, game_ticks):
+        '''Update all sprites.'''
+        self._players.update(game_ticks)
+
+    def render_image(self):
+        '''Blit everything together in the right order.'''
+        # draw map
+        self._image.blit(self._map.image, (0, 0))
+        # draw units
+        self._players.draw(self._image)
+        # draw cursors
+        self._selection.draw(self._image)
+        return self._image
+
+    def cancel_event(self):
+        '''Return True if smth was canceled'''
+        if self._selection.smth_selected():
+            self._selection.unselect()
+            return True
+        else:
+            return False
+
+    def click_event(self, pos):
+        '''Deside what to do on mouse click on particular tile.'''
+        # TODO: check game rules here e. g. its unit belong to current
+        # player
+        # TODO: check if player want to attack
+        self.mouseover_event(pos)
+        pointed = self._selection.pointed_tile
+        selected = self._selection.selected_tile
+        # if smth selected try to cycle selection
+        if selected and pointed == selected:
+            # self._cycle_selection() between castle and unit
+            # castle menu
+            # self._castle_menu()
+            pass
+        # try to move if reachable
+        elif selected and self._selection.reachable(pointed):
+            self._selection.move()
+        # try to attack if has enemy unit
+        elif selected and pointed.unit not in self._players.current:
+            pass
+        # try to select
+        elif pointed.unit and pointed.unit in self._players.current:
+            self._selection.select()
+        elif pointed.type is 'castle':
+            # castle menu
+            # self._castle_menu()
+            pass
+
+    def mouseover_event(self, pos):
+        '''Highlight tile with the mouse.'''
+        self._selection.highlight(pos)
 
 
-    class _Player(object):
+class Players(object):
+    '''Container for players.'''
 
-        def __init__(self):
-            self._units = []
+    def __init__(self, players):
+        self.players = players
+        self.current = players[0]
 
-        def add_unit(self, unit):
-            self._units.append(unit)
+    def update(self, game_ticks):
+        '''Recursive'''
+        for player in self.players:
+            player.update(game_ticks)
 
-        def get_units(self):
-            return self._units
+    def draw(self, image):
+        '''Recursive'''
+        for player in self.players:
+            player.draw(image)
+
+    def __getitem__(self, i):
+        return self.players[i]
+
+class Player(pygame.sprite.RenderUpdates):
+    '''Container for units.'''
+
+    def __init__(self, name):
+        pygame.sprite.RenderUpdates.__init__(self)
+        self.name = name
 
 
-class Selection(pygame.sprite.Sprite):
+class Selection():
     """Object responsible for selection of tiles."""
 
     def __init__(self, _map):
         self._map = _map
         self._green_image = utils.load_image('selection_green_bold.png')
         self._orange_image = utils.load_image('selection_orange_bold.png')
-        self._pointed_tile = None
-        self._selected_tile = None
+        self.pointed_tile = None
+        self.selected_tile = None
         self._path = None
 
-    def mouse(self, pos):
+    def highlight(self, pos):
         '''Determine tile where mouse points.'''
         new_tile = self._map.tile_at_coord(*pos)
-        if new_tile and new_tile != self._pointed_tile:
-            self._pointed_tile = new_tile
-            if self._selected_tile and self._pointed_tile:
+        if new_tile and new_tile != self.pointed_tile:
+            self.pointed_tile = new_tile
+            if self.selected_tile and self.pointed_tile:
                 self._draw_path()
 
-    def is_selectable(self, tile):
-        '''We can only select unit or castle to buy units.'''
-        return tile.unit or tile.type is 'castle'
-
     def smth_selected(self):
-        return self._selected_tile != None
+        return self.selected_tile != None
 
-    def select_or_move(self, pos):
-        '''Determine what to do depending on game state and selected tile.'''
-        # TODO: check game rules here e. g. its unit belong to current
-        # player
-        # TODO: check if player want to attack
-        self.mouse(pos)
-        # select
-        if self.is_selectable(self._pointed_tile):
-            # select tile
-            self._selected_tile = self._map.tile_at_coord(*pos)
-            return
-        # move
-        if self._selected_tile and self._selected_tile.unit \
-                and not self._pointed_tile.unit:
-            self._move()
-            return
+    def reachable(self, tile):
+        # TODO: check if reachable
+        return not tile.unit
+
+    def select(self):
+        self.selected_tile = self.pointed_tile
 
     def _draw_path(self):
         '''Draw dots on the map for current path.'''
@@ -124,27 +181,27 @@ class Selection(pygame.sprite.Sprite):
         # TODO: check for path validity and draw in red if not valid
 
     def _find_path(self):
-        orig = self._selected_tile
-        dest = self._pointed_tile
+        orig = self.selected_tile
+        dest = self.pointed_tile
         self._path = self._map.find_path(orig, dest)
 
-    def _move(self):
+    def move(self):
         dest = self._path[-1]
-        self._selected_tile.unit.move(self._path)
+        self.selected_tile.unit.move(self._path)
         # assign new tile to unit
-        self._selected_tile.unit.tile = dest
+        self.selected_tile.unit.tile = dest
         # assign new unit to tile
-        dest.unit = self._selected_tile.unit
+        dest.unit = self.selected_tile.unit
         # remove unit from old tile
-        self._selected_tile.unit = None
+        self.selected_tile.unit = None
         # select new tile
-        self._selected_tile = dest
+        self.selected_tile = None
 
     def unselect(self):
-        self._selected_tile = None
+        self.selected_tile = None
 
     def draw(self, image):
-        if self._pointed_tile:
-            image.blit(self._green_image, self._pointed_tile.coord)
-        if self._selected_tile:
-            image.blit(self._orange_image, self._selected_tile.coord)
+        if self.pointed_tile:
+            image.blit(self._green_image, self.pointed_tile.coord)
+        if self.selected_tile:
+            image.blit(self._orange_image, self.selected_tile.coord)

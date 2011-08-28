@@ -93,17 +93,15 @@ class _Game(object):
 
     def _init_game(self):
         self._game = game.Game()
-        self._selection = self._game.selection
-        self._allsprites = pygame.sprite.RenderUpdates(self._game.units)
+
 
     def _init_graphics(self):
-        self._background = utils.load_image('game_background.jpg', size=utils.SCREEN_SIZE)
+        self._background = utils.load_image('game_background.jpg',
+                                            size=utils.SCREEN_SIZE)
         # calculate map shift from the edge of the screen
         size = utils.SCREEN_SIZE
-        w, h = self._game.map_image.get_size()
+        w, h = self._game.get_map_size()
         self._shift = (size[0] - w) / 2, (size[1] - h) / 2
-        # surface for map and units
-        self._image = pygame.Surface((w, h))
 
     def handle_events(self, events):
         """Return false to stop the event loop and end the game."""
@@ -112,44 +110,29 @@ class _Game(object):
                 self._state_manager.state = "InGameMenu"
             elif event.type == pl.MOUSEBUTTONUP:
                 if event.button == MOUSE_LEFT:
-                    self._selection.select_or_move(self._to_map_coords(pygame.mouse.get_pos()))
+                    self._game.click_event(self._to_map_coords(pygame.mouse.get_pos()))
             elif event.type == pl.KEYDOWN:
                 if event.key == pl.K_ESCAPE:
-                    if self._selection.smth_selected():
-                        self._selection.unselect()
-                    else:
+                    if not self._game.cancel_event():
                         self._state_manager.state = "InGameMenu"
         return True
 
     def update(self):
-        self._selection.mouse(self._to_map_coords(pygame.mouse.get_pos()))
-        self._allsprites.empty()
-        self._allsprites.add(self._game.units)
-        self._allsprites.update(pygame.time.get_ticks())
-        pass
+        self._game.mouseover_event(self._to_map_coords(pygame.mouse.get_pos()))
+        self._game.update(pygame.time.get_ticks())
 
     def _render_image(self):
-        # draw map
-        self._image.blit(self._game.map_image, (0, 0))
-        # update units and draw them
-        self.draw_units(self._image)
-        # draw cursors
-        self.draw_selections(self._image)
         # draw screen
-        self._background.blit(self._image, self._from_map_coords((0, 0)))
+        self._background.blit(self._game.render_image(),
+                              self._from_map_coords((0, 0)))
         return self._background
 
-    def draw_units(self, image):
-        self._allsprites.draw(image)
-
-    def draw_selections(self, image):
-        '''Draw selection on the block that mouse points to and currently selected block.'''
-        self._selection.draw(image)
-
     def _to_map_coords(self, pos):
+        '''Correction to coords due to drawing the map in the center.'''
         return pos[0] - self._shift[0], pos[1] - self._shift[1]
 
     def _from_map_coords(self, pos):
+        '''Backwards correction.'''
         return pos[0] + self._shift[0], pos[1] + self._shift[1]
 
     def get_image(self):
@@ -165,9 +148,9 @@ class _InGameMenu(object):
 
     def _init_graphics(self):
         self._background = pygame.Surface((utils.SCREEN_SIZE))
-        self._background = utils.load_image('in_game_menu.jpg', size=utils.SCREEN_SIZE)
         self._image = pygame.Surface((utils.SCREEN_SIZE))
-        #self._image.set_alpha(230)
+        self._background = utils.load_image('in_game_menu.jpg',
+                                            size=utils.SCREEN_SIZE)
         menu_items = (("Resume game", self._resume_game),
                       ("Exit game", self._exit_game),
                       )
