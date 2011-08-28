@@ -155,6 +155,7 @@ class Selection():
         self._map = _map
         self._green_image = utils.load_image('selection_green_bold.png')
         self._orange_image = utils.load_image('selection_orange_bold.png')
+        self._red_image = utils.load_image('selection_red_bold.png')
         self._reachable_image = utils.load_image('reachable.png')
         self._reachable_image.set_alpha(123)
         self.pointed_tile = None
@@ -167,8 +168,6 @@ class Selection():
         new_tile = self._map.tile_at_coord(*pos)
         if new_tile and new_tile != self.pointed_tile:
             self.pointed_tile = new_tile
-            if self.selected_tile and self.pointed_tile:
-                self._draw_path()
 
     def reachable(self, tile):
         '''Unit can get to that tile in one turn.'''
@@ -179,11 +178,6 @@ class Selection():
         '''Immediately view reachable tiles for selected unit.'''
         self._reachable = self._map.get_reachable(self.pointed_tile)
         self.selected_tile = self.pointed_tile
-
-    def _draw_path(self):
-        '''Draw dots on the map for current path.'''
-        self._find_path()
-        # TODO: check for path validity and draw in red if not valid
 
     def _find_path(self):
         orig = self.selected_tile
@@ -207,9 +201,28 @@ class Selection():
 
     def draw(self, image):
         if self.pointed_tile:
-            image.blit(self._green_image, self.pointed_tile.coord)
+            # pointing to reachable tile
+            if self.selected_tile and self.pointed_tile in self._reachable:
+                image.blit(self._green_image, self.pointed_tile.coord)
+                self._draw_path(image)
+            # pointing to unreachable tile
+            elif self.selected_tile and self.pointed_tile not in self._reachable:
+                image.blit(self._red_image, self.pointed_tile.coord)
+            # no tile selected
+            else:
+                image.blit(self._green_image, self.pointed_tile.coord)
         if self.selected_tile:
             image.blit(self._orange_image, self.selected_tile.coord)
             for tile in self._reachable:
                 image.blit(self._reachable_image, tile.coord)
-                
+
+    def _draw_path(self, image):
+        '''Draw dots on the map for current path.'''
+        self._find_path()
+        def center(x):
+            '''Shift line to the center of the cell.'''
+            return x + utils.TILE_SIZE / 2
+        points = [map(center, tile.coord) for tile in self._path]
+        color = (255, 0, 0)
+        pygame.draw.lines(image, color, False, points, 3)
+
