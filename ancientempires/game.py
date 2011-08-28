@@ -11,6 +11,7 @@ import units
 import utils
 
 import pygame
+import pygame.locals as pl
 
 __author__ = "Xarts19 (xarts19@gmail.com)"
 __version__ = "Version: 0.0.1 "
@@ -79,7 +80,7 @@ class Game(object):
 
     def cancel_event(self):
         '''Return True if smth was canceled'''
-        if self._selection.smth_selected():
+        if self._selection.selected_tile:
             self._selection.unselect()
             return True
         else:
@@ -108,7 +109,8 @@ class Game(object):
         # try to select
         elif pointed.unit and pointed.unit in self._players.current:
             self._selection.select()
-        elif pointed.type is 'castle':
+        elif pointed.type is 'castle' \
+                and pointed.owner is self._players.current:
             # castle menu
             # self._castle_menu()
             pass
@@ -153,8 +155,11 @@ class Selection():
         self._map = _map
         self._green_image = utils.load_image('selection_green_bold.png')
         self._orange_image = utils.load_image('selection_orange_bold.png')
+        self._reachable_image = utils.load_image('reachable.png')
+        self._reachable_image.set_alpha(123)
         self.pointed_tile = None
         self.selected_tile = None
+        self._reachable = None
         self._path = None
 
     def highlight(self, pos):
@@ -165,14 +170,14 @@ class Selection():
             if self.selected_tile and self.pointed_tile:
                 self._draw_path()
 
-    def smth_selected(self):
-        return self.selected_tile != None
-
     def reachable(self, tile):
-        # TODO: check if reachable
-        return not tile.unit
+        '''Unit can get to that tile in one turn.'''
+        if self._reachable:
+            return tile in self._reachable
 
     def select(self):
+        '''Immediately view reachable tiles for selected unit.'''
+        self._reachable = self._map.get_reachable(self.pointed_tile)
         self.selected_tile = self.pointed_tile
 
     def _draw_path(self):
@@ -205,3 +210,6 @@ class Selection():
             image.blit(self._green_image, self.pointed_tile.coord)
         if self.selected_tile:
             image.blit(self._orange_image, self.selected_tile.coord)
+            for tile in self._reachable:
+                image.blit(self._reachable_image, tile.coord)
+                

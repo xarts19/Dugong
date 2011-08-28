@@ -57,6 +57,38 @@ class GameMap(object):
             # "Accesing tile outside of bounds: (%s, %s)", i, j
             return None
 
+    def get_reachable(self, orig):
+        '''Get cell that is reachable in one step by unit at this tile.'''
+
+        def dive(i, j, moves):
+            if moves < 0:
+                return []
+            # this tile is reachable
+            reachable = [self.tile_at_pos(i, j)]
+            # try each direction
+            for di, dj in ((0, 1), (1, 0), (0, -1), (-1, 0)):
+                tile = self.tile_at_pos(i + di, j + dj)
+                if tile:
+                    moves_left = moves - tile.pass_cost
+                    if tile.type is not 'water' and moves_left >= 0:
+                        reachable.extend(dive(i + di, j + dj, moves_left))
+            return reachable
+
+        # general case
+        i, j = orig.pos
+        moves = orig.unit.moves_left
+        tiles = dive(i, j, moves)
+
+        # flying units
+        # swimming units
+
+        # find reachable
+        reachable = []
+        for tile in tiles:
+            if tile != orig and not tile.unit and tile not in reachable:
+                reachable.append(tile)
+        return reachable
+
     def find_path(self, orig, dest):
         '''Return list of neighbour tiles that unit needs to traverse
         and if path is valid for this unit.
@@ -127,21 +159,21 @@ class _TileFactory(object):
         tile_type = type_info['name']
         image = type_info['image']
         defence = int(type_info['defence'])
-        speed = int(type_info['speed'])
+        pass_cost = float(type_info['pass_cost'])
         heal = int(type_info['heal'])
         # create tile
-        tile = Tile(tile_type, image, defence, speed, heal, pos)
+        tile = Tile(tile_type, image, defence, pass_cost, heal, pos)
         return tile
 
 
 class Tile(object):
     '''Single game tile. Stores attributes and image.'''
 
-    def __init__(self, tile_type, image, defence, speed, heal, pos):
+    def __init__(self, tile_type, image, defence, pass_cost, heal, pos):
         self.type = tile_type
         self._image = image
         self.defence = defence
-        self.speed = speed
+        self.pass_cost = pass_cost
         self.heal = heal
         self._owner = None
         self._pos = pos

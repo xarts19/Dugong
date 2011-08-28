@@ -53,7 +53,7 @@ class UnitFactory(object):
         #defence = type_info['defence']
         #speed = type_info['speed']
         #heal = type_info['heal']
-        max_moves = type_info['max_moves']
+        max_moves = float(type_info['max_moves'])
         unit = Unit(unit_type, image, images, tile, owner, max_moves)
         return unit
 
