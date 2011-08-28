@@ -54,12 +54,13 @@ class UnitFactory(object):
         #speed = type_info['speed']
         #heal = type_info['heal']
         max_moves = float(type_info['max_moves'])
-        unit = Unit(unit_type, image, images, tile, owner, max_moves)
+        _range = int(type_info['range'])
+        unit = Unit(unit_type, image, images, tile, owner, max_moves, _range)
         return unit
 
 class Unit(pygame.sprite.Sprite):
 
-    def __init__(self, unit_type, image, images, tile, owner, max_moves):
+    def __init__(self, unit_type, image, images, tile, owner, max_moves, _range):
         pygame.sprite.Sprite.__init__(self)
         self._type = unit_type
         self._owner = owner
@@ -69,6 +70,12 @@ class Unit(pygame.sprite.Sprite):
         self.rect = self._image.get_rect()
         self.moves_left = max_moves
         self.max_moves = max_moves
+        self.range = _range
+
+    def can_attack(self, unit):
+        i, j = self.tile.pos
+        i2, j2 = unit.tile.pos
+        return abs(i - i2) + abs(j - j2) <= self.range
 
     @property
     def image(self):

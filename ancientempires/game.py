@@ -25,9 +25,9 @@ class Game(object):
     def __init__(self):
         _LOGGER.debug('Initializing game map')
         self._map = gamemap.GameMap()
-        self._selection = Selection(self._map)
         self._unit_factory = units.UnitFactory()
         self._players = Players([Player('Xarts'), Player('Zagor')])
+        self._selection = Selection(self._map, self._players)
         # FIXME: find where to put this
         self.load_level(1)
         # works only after level was loaded (needs to know map size):
@@ -151,11 +151,13 @@ class Player(pygame.sprite.RenderUpdates):
 class Selection():
     """Object responsible for selection of tiles."""
 
-    def __init__(self, _map):
+    def __init__(self, _map, players):
         self._map = _map
+        self._players = players
         self._green_image = utils.load_image('selection_green_bold.png')
         self._orange_image = utils.load_image('selection_orange_bold.png')
         self._red_image = utils.load_image('selection_red_bold.png')
+        self._target_image = utils.load_image('target.png')
         self._reachable_image = utils.load_image('reachable.png')
         self._reachable_image.set_alpha(123)
         self.pointed_tile = None
@@ -201,8 +203,13 @@ class Selection():
 
     def draw(self, image):
         if self.pointed_tile:
+            # pointing to enemy unit
+            if self.selected_tile and self.pointed_tile.unit \
+                    and self.pointed_tile.unit not in self._players.current \
+                    and self.selected_tile.unit.can_attack(self.pointed_tile.unit):
+                image.blit(self._target_image, self.pointed_tile.coord)
             # pointing to reachable tile
-            if self.selected_tile and self.pointed_tile in self._reachable:
+            elif self.selected_tile and self.pointed_tile in self._reachable:
                 image.blit(self._green_image, self.pointed_tile.coord)
                 self._draw_path(image)
             # pointing to unreachable tile
