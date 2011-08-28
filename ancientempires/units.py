@@ -4,6 +4,7 @@
 
 """
 
+import sys
 import logging
 
 import pygame
@@ -55,7 +56,9 @@ class UnitFactory(object):
         #heal = type_info['heal']
         max_moves = float(type_info['max_moves'])
         _range = int(type_info['range'])
-        unit = Unit(unit_type, image, images, tile, owner, max_moves, _range)
+        name = type_info['name']
+        unit_class = getattr(sys.modules[__name__], name.capitalize(), Unit)
+        unit = unit_class(unit_type, image, images, tile, owner, max_moves, _range)
         return unit
 
 class Unit(pygame.sprite.Sprite):
@@ -99,4 +102,14 @@ class Unit(pygame.sprite.Sprite):
 
     def move(self, path):
         self._image.start_animation(path)
+
+class Catapult(Unit):
+
+    def __init__(self, *args):
+        Unit.__init__(self, *args)
+
+    def can_attack(self, unit):
+        i, j = self.tile.pos
+        i2, j2 = unit.tile.pos
+        return 1 < abs(i - i2) + abs(j - j2) <= self.range
 
