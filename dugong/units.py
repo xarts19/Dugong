@@ -106,7 +106,7 @@ class Unit(pygame.sprite.Sprite):
         self.rect = self._image.get_rect()
 
     def move(self, path):
-        dest = path[-1]
+        dest = path.end()
         self._image.start_animation(path)
         # remove unit from old tile
         self.tile.unit = None
@@ -183,7 +183,7 @@ class AnimatedImage(object):
 def create_pixel_path(path):
     '''Create path in pixels from path in tiles.'''
     pixel_path = {'current': 0, 'path': []}
-    path = straighten_path(path)
+    path = straighten_path(path.tiles)
     for tile1, tile2 in zip(path[:-1], path[1:]):
         x1, y1 = tile1.coord
         x2, y2 = tile2.coord

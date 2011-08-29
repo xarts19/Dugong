@@ -124,19 +124,28 @@ class GameMap(object):
         p = Path()
         p.tiles = path
         p.cost = moves - cost_left
-        return path
+        return p
 
 
 class Path(object):
 
     def __init__(self, start_tile=None):
         self.tiles = [start_tile]
-        self.pixels = None
         self.cost = None
 
-    @property
+    def pixels(self):
+        '''List of coords of pixels of each tile in path.'''
+        return [[v + utils.TILE_SIZE / 2 for v in tile.coord]
+                                         for tile in self.tiles]
+
     def size(self):
         return len(self.tiles)
+
+    def start(self):
+        return self.tiles[0]
+
+    def end(self):
+        return self.tiles[-1]
 
 
 # helper function for GameMap class

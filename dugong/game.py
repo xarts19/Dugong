@@ -219,13 +219,10 @@ class Selection():
     def _draw_path(self, image):
         '''Draw dots on the map for current path.'''
         self._find_path()
-        if len(self._path) < 2:
+        if self._path.size() < 2:
             _LOGGER.exception("Failed to find path.")
             return
-        def center(x):
-            '''Shift line to the center of the cell.'''
-            return x + utils.TILE_SIZE / 2
-        points = [map(center, tile.coord) for tile in self._path]
+        points = self._path.pixels()
         color = (255, 0, 0)
         pygame.draw.lines(image, color, False, points, 3)
 
