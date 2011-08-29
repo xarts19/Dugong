@@ -25,7 +25,7 @@ SCREEN_SIZE = (1280, 720)
 TILE_SIZE = 50
 
 
-def load_image(name, colorkey=None, size=(TILE_SIZE, TILE_SIZE)):
+def load_image(name, colorkey=None, size=(TILE_SIZE, TILE_SIZE), rotate=0):
     '''Load image. Uses red box as fallback.'''
     fullname = os.path.join(IMAGES_DIR, name)
     # if image wasn't found, use red box as fallback
@@ -33,6 +33,8 @@ def load_image(name, colorkey=None, size=(TILE_SIZE, TILE_SIZE)):
         image = pygame.image.load(fullname)
         if size:
             image = pytrans.scale(image, size)
+        if rotate:
+            image = pygame.transform.rotate(image, rotate)
     except pygame.error, message:
         _LOGGER.exception("Can't load image: %s", message)
         image = pygame.Surface((TILE_SIZE, TILE_SIZE))
@@ -63,17 +65,52 @@ def _create_level_image(level, level_info):
     image = pygame.Surface((map_width, map_height))
     # blit each tile to image
     background = load_image(os.path.join(season, level_info['background'], '1.png'))
-    for row in level:
-        for tile in row:
+    for i, row in enumerate(level):
+        for j, tile in enumerate(row):
             if tile:
-                # select proper image (crossroad, straight_road)
-                image_name = os.path.join(season, tile.type, '1.png')
-                tile_image = load_image(image_name)
+                tile_image = None
+                # select proper image
+                if tile.type == 'road':
+                    # select proper road part: crossroad,
+                    # straight_road
+                    tile_image = select_road_block((i, j), level, season)
+                else:
+                    name = '1.png'
+                    image_name = os.path.join(season, tile.type, name)
+                    tile_image = load_image(image_name)
                 # blit land image as background
                 image.blit(background, tile.coord)
                 # blit specific image for tile
                 image.blit(tile_image, tile.coord)
     return image
+
+def select_road_block(coords, level, season):
+    # 5 relevant cells
+    name = '1.png'
+    rotate = 0
+    i, j = coords
+    C, N, S, W, E = level[i][j], level[i-1][j], level[i+1][j], level[i][j-1], level[i][j+1]
+    R = ['road', 'bridge', 'castle', 'house']
+    if N.type in R and S.type in R and W.type in R and E.type in R:
+        name = 'crossroad.png'
+    if N.type in R and S.type in R:
+        name = 'vertical.png'
+    if W.type in R and E.type in R:
+        name = 'horizontal.png'
+    if W.type in R and N.type in R:
+        name = 'turn.png'
+    if W.type in R and S.type in R:
+        name = 'turn.png'
+        rotate = 90
+    if S.type in R and E.type in R:
+        name = 'turn.png'
+        rotate = 180
+    if E.type in R and N.type in R:
+        name = 'turn.png'
+        rotate = 270
+    full_name = os.path.join(season, 'road', name)
+    return load_image(full_name, rotate=rotate)
+
 
 def load_level_info(name, levels_file='levels'):
     '''Return level object (2d array) read from file'''
