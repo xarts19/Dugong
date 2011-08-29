@@ -98,6 +98,7 @@ class GameMap(object):
         def find(start_i, start_j, moves, dest):
             '''Breadth first search for path from i, j to dest.'''
             final_path = None
+            cost_left = 0
             # add starting tile to fring
             #fringe = [Path(start_i, start_j)]
             fringe = fringe = [([(start_i, start_j)], moves)]
@@ -112,21 +113,31 @@ class GameMap(object):
                         if tile.type is not 'water' and not tile.unit and moves_left >= 0:
                             if tile is dest:
                                 final_path = path[0] + [(i + di, j + dj)]
+                                lenghth = moves_left
                                 fringe = []
                                 break
                             fringe.append((path[0]+[(i + di, j + dj)], moves_left))
-            return [self.tile_at_pos(i, j) for i, j in final_path]
+            return [self.tile_at_pos(i, j) for i, j in final_path], cost_left
 
         moves = orig.unit.moves_left
-        path = find(orig.pos[0], orig.pos[1], moves, dest)
+        path, cost_left = find(orig.pos[0], orig.pos[1], moves, dest)
+        p = Path()
+        p.tiles = path
+        p.cost = moves - cost_left
         return path
+
 
 class Path(object):
 
-    def __init__(self, start_tile):
+    def __init__(self, start_tile=None):
         self.tiles = [start_tile]
         self.pixels = None
         self.cost = None
+
+    @property
+    def size(self):
+        return len(self.tiles)
+
 
 # helper function for GameMap class
 def _init_level(level_map, tile_factory):
