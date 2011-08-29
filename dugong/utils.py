@@ -93,19 +93,33 @@ def select_road_block(coords, level, season):
     R = ['road', 'bridge', 'castle', 'house']
     if N.type in R and S.type in R and W.type in R and E.type in R:
         name = 'crossroad.png'
-    if N.type in R and S.type in R:
+    # branch
+    elif N.type in R and W.type in R and S.type in R:
+        name = 'branch.png'
+    elif E.type in R and S.type in R and W.type in R:
+        name = 'branch.png'
+        rotate = 90
+    elif N.type in R and S.type in R and E.type in R:
+        name = 'branch.png'
+        rotate = 180
+    elif N.type in R and E.type in R and W.type in R:
+        name = 'branch.png'
+        rotate = 270
+    # straight
+    elif N.type in R and S.type in R:
         name = 'vertical.png'
-    if W.type in R and E.type in R:
+    elif W.type in R and E.type in R:
         name = 'horizontal.png'
-    if W.type in R and N.type in R:
+    # turn
+    elif W.type in R and N.type in R:
         name = 'turn.png'
-    if W.type in R and S.type in R:
+    elif W.type in R and S.type in R:
         name = 'turn.png'
         rotate = 90
-    if S.type in R and E.type in R:
+    elif S.type in R and E.type in R:
         name = 'turn.png'
         rotate = 180
-    if E.type in R and N.type in R:
+    elif E.type in R and N.type in R:
         name = 'turn.png'
         rotate = 270
     full_name = os.path.join(season, 'road', name)
