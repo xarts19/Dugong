@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-"""Auto-generated file
+"""Contains utility function such as loading images, concatenationg them,
+loading and parsing config files.
 
 """
 
@@ -76,6 +77,7 @@ def load_level_info(name, levels_file='levels'):
     config.read(path)
 
     def parse(option):
+        '''Extract level config file as dictionary.'''
         level[option] = []
         for line in config.get(name, option).split('\n'):
             row = []
@@ -89,7 +91,8 @@ def load_level_info(name, levels_file='levels'):
         # all rows should be the same size
         if False in [len(level[option][i]) == len(level[option][i + 1])
                      for i in range(len(level[option]) - 1)]:
-            _LOGGER.exception('not all rows in %s %s have same width', name, option)
+            _LOGGER.exception('not all rows in %s %s have same width',
+                              name, option)
 
     return level
 
@@ -104,6 +107,7 @@ def load_unit_types(filename='unit_types'):
     return units_info
 
 def _load_config(filename):
+    '''Generic function for reading game config files.'''
     path = os.path.join(DESCR_DIR, filename)
     config = cparser.RawConfigParser()
     config.read(path)
@@ -115,95 +119,9 @@ def _load_config(filename):
         if 'imagename' in options:
             options['image'] = load_image(options['imagename'])
         if 'animation' in options:
-            options['animation'] = map(load_image, options['animation'].split(','))
+            options['animation'] = \
+                map(load_image, options['animation'].split(','))
         sections[section] = options
     return sections
 
-class AnimatedImage(object):
-
-    def __init__(self, static, animated, coord):
-        self._image = static
-        self._images = animated
-        self._current = self._image
-        self._animated = False
-        self._rect = self._image.get_rect()
-        self._rect.topleft = coord
-
-    def __call__(self):
-        return self._current
-
-    def get_rect(self):
-        return self._rect
-
-    def update(self, t):
-        if self._animated:
-            if t - self._last_update > self._delay:
-                # animate image
-                self._frame += 1
-                if self._frame >= len(self._images):
-                    self._frame = 0
-                self._current = self._images[self._frame]
-                # move image
-                if self._path['current'] == len(self._path['path']) - 1:
-                    self._rect.topleft = self._path['path'][-1]
-                    self.stop_animation()
-                else:
-                    self._path['current'] += 1
-                    self._rect.topleft = self._path['path'][self._path['current']]
-                self._last_update = t
-
-    def start_animation(self, path, fps=60):
-        # Track the time we started, and the time between updates.
-        # Then we can figure out when we have to switch the image.
-        self._animated = True
-        self._path = create_pixel_path(path)
-        self._current = self._images[0]
-        #self._start = pygame.time.get_ticks()
-        self._delay = 1000 / fps
-        self._last_update = 0
-        self._frame = 0
-        self.update(pygame.time.get_ticks())
-
-
-    def stop_animation(self):
-        self._animated = False
-        self._current = self._image
-
-
-def create_pixel_path(path):
-    '''Create path in pixels from path in tiles.'''
-    pixel_path = {'current':0, 'path':[]}
-    path = straighten_path(path)
-    for tile1, tile2 in zip(path[:-1], path[1:]):
-        x1, y1 = tile1.coord
-        x2, y2 = tile2.coord
-        # WARNINIG: alg works only for 20 steps
-        l_x = (x2 - x1) / 100.0
-        l_y = (y2 - y1) / 100.0
-        for i in range(20):
-            delta = abs(abs(i - 10) - 10)
-            x1 += delta * l_x
-            y1 += delta * l_y
-            pixel_path['path'].append((x1, y1))
-    pixel_path['path'].append(path[-1].coord)
-    return pixel_path
-
-
-def straighten_path(path):
-    '''Join straight segments of the path.'''
-    straight_path = [path[0]]
-    i = 0
-    j = 1
-    while j + 1 < len(path):
-        x1, y1 = path[i].pos
-        x2, y2 = path[j].pos
-        x3, y3 = path[j + 1].pos
-        if x1 == x2 == x3 or y1 == y2 == y3:
-            j += 1
-        else:
-            straight_path.append(path[j])
-            i = j
-            j += 1
-    straight_path.append(path[-1])
-    return straight_path
 

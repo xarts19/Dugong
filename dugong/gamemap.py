@@ -97,8 +97,10 @@ class GameMap(object):
 
         def find(start_i, start_j, moves, dest):
             '''Breadth first search for path from i, j to dest.'''
-            final_path = []
-            fringe = [([(start_i, start_j)], moves)]
+            final_path = None
+            # add starting tile to fring
+            #fringe = [Path(start_i, start_j)]
+            fringe = fringe = [([(start_i, start_j)], moves)]
             while len(fringe) > 0:
                 path = fringe[0]
                 del fringe[0]
@@ -119,6 +121,12 @@ class GameMap(object):
         path = find(orig.pos[0], orig.pos[1], moves, dest)
         return path
 
+class Path(object):
+
+    def __init__(self, start_tile):
+        self.tiles = [start_tile]
+        self.pixels = None
+        self.cost = None
 
 # helper function for GameMap class
 def _init_level(level_map, tile_factory):

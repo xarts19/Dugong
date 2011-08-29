@@ -144,7 +144,7 @@ class Player(pygame.sprite.RenderUpdates):
     '''Container for units.'''
 
     def __init__(self, name):
-        pygame.sprite.RenderUpdates.__init__(self)
+        super(Player, self).__init__()
         self.name = name
 
 
@@ -187,15 +187,8 @@ class Selection():
         self._path = self._map.find_path(orig, dest)
 
     def move(self):
-        dest = self._path[-1]
         self.selected_tile.unit.move(self._path)
-        # assign new tile to unit
-        self.selected_tile.unit.tile = dest
-        # assign new unit to tile
-        dest.unit = self.selected_tile.unit
-        # remove unit from old tile
-        self.selected_tile.unit = None
-        # select new tile
+        # unselect tile
         self.selected_tile = None
 
     def unselect(self):
