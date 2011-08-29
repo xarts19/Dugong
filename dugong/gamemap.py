@@ -37,10 +37,10 @@ class GameMap(object):
         '''Return complete map image'''
         return self._image
 
-    def load_level(self, level_map):
+    def load_level(self, level_info):
         '''Reinitialize map with new level.'''
-        self._level = _init_level(level_map, self._tile_factory)
-        self._image = utils._concatenate_image(self._level)
+        self._level = _init_level(level_info['map'], self._tile_factory)
+        self._image = utils._create_level_image(self._level, level_info)
 
     def tile_at_coord(self, x, y):
         '''Return tile object at pixel coords.'''
@@ -170,21 +170,19 @@ class _TileFactory(object):
         # init info from type
         type_info = tile_types[tile_type]
         tile_type = type_info['name']
-        image = type_info['image']
         defence = int(type_info['defence'])
         pass_cost = float(type_info['pass_cost'])
         heal = int(type_info['heal'])
         # create tile
-        tile = Tile(tile_type, image, defence, pass_cost, heal, pos)
+        tile = Tile(tile_type, defence, pass_cost, heal, pos)
         return tile
 
 
 class Tile(object):
     '''Single game tile. Stores attributes and image.'''
 
-    def __init__(self, tile_type, image, defence, pass_cost, heal, pos):
+    def __init__(self, tile_type, defence, pass_cost, heal, pos):
         self.type = tile_type
-        self._image = image
         self.defence = defence
         self.pass_cost = pass_cost
         self.heal = heal
@@ -214,10 +212,6 @@ class Tile(object):
         if value is not None and self.unit:
             _LOGGER.exception("Tile at %s already occupied.", self.pos)
         self._unit = value
-
-    @property
-    def image(self):
-        return self._image
 
     @property
     def pos(self):

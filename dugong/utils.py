@@ -54,17 +54,25 @@ def load_image(name, colorkey=None, size=(TILE_SIZE, TILE_SIZE)):
         image.set_colorkey(colorkey, pl.RLEACCEL)
     return image
 
-def _concatenate_image(level):
+def _create_level_image(level, level_info):
     '''Return image of whole level built from tiles.'''
+    season = level_info['season']
     tile_width = tile_height = TILE_SIZE
     map_width = len(level[0]) * tile_width
     map_height = len(level) * tile_height
     image = pygame.Surface((map_width, map_height))
     # blit each tile to image
+    background = load_image(os.path.join(season, level_info['background'], '1.png'))
     for row in level:
         for tile in row:
             if tile:
-                image.blit(tile.image, tile.coord)
+                # select proper image (crossroad, straight_road)
+                image_name = os.path.join(season, tile.type, '1.png')
+                tile_image = load_image(image_name)
+                # blit land image as background
+                image.blit(background, tile.coord)
+                # blit specific image for tile
+                image.blit(tile_image, tile.coord)
     return image
 
 def load_level_info(name, levels_file='levels'):
@@ -76,27 +84,27 @@ def load_level_info(name, levels_file='levels'):
     config = cparser.RawConfigParser()
     config.read(path)
 
-    def parse(option):
-        '''Extract level config file as dictionary.'''
-        level[option] = []
-        for line in config.get(name, option).split('\n'):
-            row = []
-            for item in line:
-                row.append(item)
-            level[option].append(row)
-
     # parse all options in needed level
+    # Extract level config file as dictionary.
     for option in config.options(name):
-        parse(option)
+        if option == 'map' or option.startswith('unit'):
+            level[option] = []
+            for line in config.get(name, option).split('\n'):
+                row = []
+                for item in line:
+                    row.append(item)
+                level[option].append(row)
+        else:
+            level[option] = config.get(name, option)
+
         # all rows should be the same size
         if False in [len(level[option][i]) == len(level[option][i + 1])
                      for i in range(len(level[option]) - 1)]:
             _LOGGER.exception('not all rows in %s %s have same width',
                               name, option)
-
     return level
 
-def load_tile_types(filename='tile_types'):
+def load_tile_types(filename='tile_types', season='summer'):
     '''Return tile types dict read from config file.'''
     tiles_info = _load_config(filename)
     return tiles_info

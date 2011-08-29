@@ -42,7 +42,7 @@ class Game(object):
         '''Load level from file with given number. Init map and units.'''
         level_name = 'level_' + str(level_num)
         level_info = utils.load_level_info(level_name)
-        self._map.load_level(level_info['map'])
+        self._map.load_level(level_info)
         self._init_units(level_info['units_1'], self._players[0])
         self._init_units(level_info['units_2'], self._players[1])
 
