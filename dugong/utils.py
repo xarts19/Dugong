@@ -26,14 +26,13 @@ DESCR_DIR = os.path.join(GAME_DIR, 'descr')
 SCREEN_SIZE = (1280, 720)
 TILE_SIZE = 50
 
-def load_configs(filename='config'):
+def load_configs():
     _LOGGER.debug('Loading configs')
-    config = _load_config(filename)
+    from conifgs import config
     global SCREEN_SIZE
     global TILE_SIZE
-    SCREEN_SIZE = int(config['graphics']['screen_width']), \
-                  int(config['graphics']['screen_height'])
-    TILE_SIZE = int(config['graphics']['tile_size'])
+    SCREEN_SIZE = config.graphics['screen_mode']
+    TILE_SIZE = config.graphics['tile_size']
 
 
 def load_levels_info():
