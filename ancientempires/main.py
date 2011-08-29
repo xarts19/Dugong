@@ -12,7 +12,7 @@ __date__ = "Date: 2011-08-22 12:26:37.904459 "
 import sys
 import optparse
 import logging
-import colorer
+from external import colorer
 LOGGER = logging.getLogger('main')
 
 LOGGER_FORMAT = "%(name)s--%(levelname)s--%(asctime)s - %(message)s"

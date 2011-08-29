@@ -7,7 +7,6 @@
 import sys
 import os
 import logging
-import colorer
 
 try:
     import pygame
