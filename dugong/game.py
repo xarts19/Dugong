@@ -26,10 +26,11 @@ class Game(object):
         _LOGGER.debug('Initializing game map')
         self._map = gamemap.GameMap()
         self._unit_factory = units.UnitFactory()
-        self._players = Players([Player('Xarts'), Player('Zagor')])
+        self._players = Players([])
         self._selection = Selection(self._map, self._players)
         # FIXME: find where to put this
-        self.load_level(1)
+        self._levels = utils.load_levels_info()
+        self.load_level('1')
         # works only after level was loaded (needs to know map size):
         self._init_graphics()
 
@@ -38,21 +39,19 @@ class Game(object):
         w, h = self.get_map_size()
         self._image = pygame.Surface((w, h))
 
-    def load_level(self, level_num):
+    def load_level(self, name):
         '''Load level from file with given number. Init map and units.'''
-        level_name = 'level_' + str(level_num)
-        level_info = utils.load_level_info(level_name)
+        level_info = self._levels[name]
         self._map.load_level(level_info)
-        self._init_units(level_info['units_1'], self._players[0])
-        self._init_units(level_info['units_2'], self._players[1])
+        for i, units in enumerate(level_info['units']):
+            player = Player(str(i))
+            self._players.add(player)
+            self._init_units(units, player)
 
-    def _init_units(self, level_units, player):
+    def _init_units(self, units, player):
         '''Create units from level specs for given player.'''
-        for i, row in enumerate(level_units):
-            for j, unit_type in enumerate(row):
-                if unit_type != '.':
-                    self._add_unit(unit_type, player,
-                                   self._map.tile_at_pos(i, j))
+        for unit_type, i, j in units:
+            self._add_unit(unit_type, player, self._map.tile_at_pos(i, j))
 
     def _add_unit(self, unit_type, player, tile):
         '''Add unit to tile, _units and player'''
@@ -124,8 +123,15 @@ class Players(object):
     '''Container for players.'''
 
     def __init__(self, players):
-        self.players = players
-        self.current = players[0]
+        self.players = []
+        if players:
+            self.players = players
+            self.current = players[0]
+
+    def add(self, player):
+        if not self.players:
+            self.current = player
+        self.players.append(player)
 
     def update(self, game_ticks):
         '''Recursive'''

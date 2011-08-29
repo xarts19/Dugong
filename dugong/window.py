@@ -39,6 +39,8 @@ class Window(object):
         """Called when the the GameWindow object is initialized. Initializes
         pygame and sets up our pygame window and other pygame tools."""
 
+        utils.load_configs()
+        
         _LOGGER.debug('Initializing window')
 
         # load and set up pygame

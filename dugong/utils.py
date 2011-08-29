@@ -21,9 +21,52 @@ _LOGGER = logging.getLogger('main.utils')
 GAME_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 IMAGES_DIR = os.path.join(GAME_DIR, 'images')
 DESCR_DIR = os.path.join(GAME_DIR, 'descr')
+
+# default configs
 SCREEN_SIZE = (1280, 720)
 TILE_SIZE = 50
 
+def load_configs(filename='config'):
+    _LOGGER.debug('Loading configs')
+    config = _load_config(filename)
+    global SCREEN_SIZE
+    global TILE_SIZE
+    SCREEN_SIZE = int(config['graphics']['screen_width']), \
+                  int(config['graphics']['screen_height'])
+    TILE_SIZE = int(config['graphics']['tile_size'])
+
+
+def load_levels_info():
+    from conifgs import levels
+    return levels.get_levels()
+
+
+def load_tile_types(filename='tile_types', season='summer'):
+    '''Return tile types dict read from config file.'''
+    tiles_info = _load_config(filename)
+    return tiles_info
+
+
+def load_unit_types(filename='unit_types'):
+    '''Return unit types dict read from config file.'''
+    units_info = _load_config(filename)
+    return units_info
+
+
+def _load_config(filename, section=None):
+    '''Generic function for reading game config files.
+    If section is not specified, reads all sections.
+    '''
+    path = os.path.join(DESCR_DIR, filename)
+    config = cparser.RawConfigParser()
+    config.read(path)
+    sections = {}
+    for section in config.sections():
+        options = {}
+        for option in config.options(section):
+            options[option] = config.get(section, option)
+        sections[section] = options
+    return sections
 
 def load_image(name, colorkey=None, size=(TILE_SIZE, TILE_SIZE), rotate=0):
     '''Load image. Uses red box as fallback.'''
@@ -56,6 +99,7 @@ def load_image(name, colorkey=None, size=(TILE_SIZE, TILE_SIZE), rotate=0):
         image.set_colorkey(colorkey, pl.RLEACCEL)
     return image
 
+
 def _create_level_image(level, level_info):
     '''Return image of whole level built from tiles.'''
     season = level_info['season']
@@ -64,7 +108,8 @@ def _create_level_image(level, level_info):
     map_height = len(level) * tile_height
     image = pygame.Surface((map_width, map_height))
     # blit each tile to image
-    background = load_image(os.path.join(season, level_info['background'], '1.png'))
+    background = load_image(os.path.join(season,
+                                         level_info['background'], '1.png'))
     for i, row in enumerate(level):
         for j, tile in enumerate(row):
             if tile:
@@ -84,12 +129,15 @@ def _create_level_image(level, level_info):
                 image.blit(tile_image, tile.coord)
     return image
 
+
 def select_road_block(coords, level, season):
-    # 5 relevant cells
+    '''Select proper road part: crossroad, straight road, turn, branch.'''
     name = '1.png'
     rotate = 0
     i, j = coords
-    C, N, S, W, E = level[i][j], level[i-1][j], level[i+1][j], level[i][j-1], level[i][j+1]
+    # 5 relevant cells
+    N, S, W, E = level[i - 1][j], level[i + 1][j], \
+                       level[i][j - 1], level[i][j + 1]
     R = ['road', 'bridge', 'castle', 'house']
     if N.type in R and S.type in R and W.type in R and E.type in R:
         name = 'crossroad.png'
@@ -124,63 +172,4 @@ def select_road_block(coords, level, season):
         rotate = 270
     full_name = os.path.join(season, 'road', name)
     return load_image(full_name, rotate=rotate)
-
-
-def load_level_info(name, levels_file='levels'):
-    '''Return level object (2d array) read from file'''
-    level = {}
-    # read level info from file, create corresponding
-    # objects and store them in 2d arrays
-    path = os.path.join(DESCR_DIR, levels_file)
-    config = cparser.RawConfigParser()
-    config.read(path)
-
-    # parse all options in needed level
-    # Extract level config file as dictionary.
-    for option in config.options(name):
-        if option == 'map' or option.startswith('unit'):
-            level[option] = []
-            for line in config.get(name, option).split('\n'):
-                row = []
-                for item in line:
-                    row.append(item)
-                level[option].append(row)
-        else:
-            level[option] = config.get(name, option)
-
-        # all rows should be the same size
-        if False in [len(level[option][i]) == len(level[option][i + 1])
-                     for i in range(len(level[option]) - 1)]:
-            _LOGGER.exception('not all rows in %s %s have same width',
-                              name, option)
-    return level
-
-def load_tile_types(filename='tile_types', season='summer'):
-    '''Return tile types dict read from config file.'''
-    tiles_info = _load_config(filename)
-    return tiles_info
-
-def load_unit_types(filename='unit_types'):
-    '''Return unit types dict read from config file.'''
-    units_info = _load_config(filename)
-    return units_info
-
-def _load_config(filename):
-    '''Generic function for reading game config files.'''
-    path = os.path.join(DESCR_DIR, filename)
-    config = cparser.RawConfigParser()
-    config.read(path)
-    sections = {}
-    for section in config.sections():
-        options = {}
-        for option in config.options(section):
-            options[option] = config.get(section, option)
-        if 'imagename' in options:
-            options['image'] = load_image(options['imagename'])
-        if 'animation' in options:
-            options['animation'] = \
-                map(load_image, options['animation'].split(','))
-        sections[section] = options
-    return sections
-
 

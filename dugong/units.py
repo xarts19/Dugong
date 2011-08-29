@@ -47,9 +47,10 @@ class UnitFactory(object):
 
         # init info from type
         type_info = unit_types[unit_type]
-        image = type_info['image']
+
+        image = utils.load_image(type_info['imagename'])
         if 'animation' in type_info:
-            images = type_info['animation']
+            images = map(load_image, options['animation'].split(','))
         else:
             images = [image]
         #defence = type_info['defence']
