@@ -36,18 +36,31 @@ def load_configs():
 
 
 def load_levels_info():
-    from conifgs import levels
-    return levels.get_levels()
+    '''Format info a little, check for integrity and return.'''
+    _LOGGER.debug("Loading levels data")
+    from conifgs.levels import levels
+    # transform to more friendly for game format
+    # format map from multiline string to 2d array of letters
+    levels_info = levels
+    for name, level in levels_info.items():
+        level['map'] = [list(line.lstrip().rstrip()) for line in level['map'].split('\n')]
+        # all rows should be the same size
+        for row in level['map']:
+            if len(row) != len(level['map'][0]):
+                _LOGGER.exception('not all rows in map "%s" have same width', name)
+    return levels_info
 
 
 def load_tile_types(filename='tile_types', season='summer'):
     '''Return tile types dict read from config file.'''
+    _LOGGER.debug("Loading tiles data")
     tiles_info = _load_config(filename)
     return tiles_info
 
 
 def load_unit_types(filename='unit_types'):
     '''Return unit types dict read from config file.'''
+    _LOGGER.debug("Loading units data")
     units_info = _load_config(filename)
     return units_info
 
@@ -101,6 +114,7 @@ def load_image(name, colorkey=None, size=(TILE_SIZE, TILE_SIZE), rotate=0):
 
 def _create_level_image(level, level_info):
     '''Return image of whole level built from tiles.'''
+    _LOGGER.debug("Creating level image from description")
     season = level_info['season']
     tile_width = tile_height = TILE_SIZE
     map_width = len(level[0]) * tile_width

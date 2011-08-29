@@ -40,7 +40,7 @@ class Window(object):
         pygame and sets up our pygame window and other pygame tools."""
 
         utils.load_configs()
-        
+
         _LOGGER.debug('Initializing window')
 
         # load and set up pygame
@@ -81,7 +81,7 @@ class Window(object):
         """Runs the game. Contains the game loop that computes and renders
         each frame."""
 
-        _LOGGER.debug('Game started')
+        _LOGGER.debug('Game loop started')
 
         running = True
         # run until something tells us to stop
@@ -104,4 +104,4 @@ class Window(object):
             self.window.blit(image, (0, 0))
             pygame.display.flip()
 
-        _LOGGER.debug('Game exited')
+        _LOGGER.debug('Game loop finished')

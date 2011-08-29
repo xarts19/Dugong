@@ -151,6 +151,7 @@ class Path(object):
 # helper function for GameMap class
 def _init_level(level_map, tile_factory):
     '''Construct 2d array of Tiles from 2d array of tile types.'''
+    _LOGGER.debug("Creating tiles for level")
     level = []
     # create tiles from level definition
     for i, row in enumerate(level_map):

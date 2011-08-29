@@ -41,6 +41,7 @@ class Game(object):
 
     def load_level(self, name):
         '''Load level from file with given number. Init map and units.'''
+        _LOGGER.debug("Initializing level '%s'", name)
         level_info = self._levels[name]
         self._map.load_level(level_info)
         for i, units in enumerate(level_info['units']):

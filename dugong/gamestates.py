@@ -8,14 +8,18 @@ __author__ = "Xarts19 (xarts19@gmail.com)"
 __version__ = "Version: 0.0.1 "
 __date__ = "Date: 2011-08-25 16:01:50.179836 "
 
+import logging
+
+import pygame
+import pygame.locals as pl
+MOUSE_LEFT = 1
+
 import gamemap
 import units
 import game
 import utils
 
-import pygame
-import pygame.locals as pl
-MOUSE_LEFT = 1
+_LOGGER = logging.getLogger('main.gamestates')
 
 class GameStateManager(object):
 
@@ -62,6 +66,7 @@ class GameStateManager(object):
 class _MainMenu(object):
 
     def __init__(self, state_manager):
+        _LOGGER.debug("Creating main menu")
         self._state_manager = state_manager
         self._init_graphics()
 
@@ -87,6 +92,7 @@ class _MainMenu(object):
 class _Game(object):
 
     def __init__(self, state_manager):
+        _LOGGER.debug("Creating game")
         self._state_manager = state_manager
         self._init_game()
         self._init_graphics()
@@ -142,6 +148,7 @@ class _Game(object):
 class _InGameMenu(object):
 
     def __init__(self, state_manager):
+        _LOGGER.debug("Creating in game menu")
         self._state_manager = state_manager
         self._init_graphics()
         self._exit_flag = False
