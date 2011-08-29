@@ -15,9 +15,6 @@ except ImportError as ex:
     #LOGGER.exception("%s Failed to load module." % __file__)
     sys.exit("%s Failed to load module. %s" % (__file__, ex))
 
-if not pygame.font: LOGGER.warning('Fonts disabled')
-if not pygame.mixer: LOGGER.warning('Sound disabled')
-
 from gamestates import GameStateManager
 import utils
 
@@ -25,15 +22,24 @@ __author__ = "Xarts19 (xarts19@gmail.com)"
 __version__ = "Version: 0.0.1 "
 __date__ = "Date: 2011-08-22 12:23:45.187597 "
 
-LOGGER = logging.getLogger('main.window')
+_LOGGER = logging.getLogger('main.window')
+
+if not pygame.font:
+    _LOGGER.warning('Fonts disabled')
+if not pygame.mixer:
+    _LOGGER.warning('Sound disabled')
+
 
 class Window(object):
+    '''Manages general game initialization and running game loop.
+    Delegates updates and event handling to gamestatemanager object.
+    '''
 
     def __init__(self):
         """Called when the the GameWindow object is initialized. Initializes
         pygame and sets up our pygame window and other pygame tools."""
 
-        LOGGER.debug('Initializing window')
+        _LOGGER.debug('Initializing window')
 
         # load and set up pygame
         pygame.init()
@@ -73,18 +79,20 @@ class Window(object):
         """Runs the game. Contains the game loop that computes and renders
         each frame."""
 
-        LOGGER.debug('Game started')
+        _LOGGER.debug('Game started')
 
         running = True
         # run until something tells us to stop
         while running:
 
             # tick pygame clock
-            # you can limit the fps by passing the desired frames per second to tick()
+            # you can limit the fps by passing the desired frames per
+            # second to tick()
             self.clock.tick(60)
 
             # update the title bar with our frames per second
-            pygame.display.set_caption('Ancient Empires, %d fps' % self.clock.get_fps())
+            pygame.display.set_caption('Ancient Empires at %d fps'
+                                       % self.clock.get_fps())
 
             # standard game loop
             running = self._game_state.handle_events(pygame.event.get())
@@ -94,4 +102,4 @@ class Window(object):
             self.window.blit(image, (0, 0))
             pygame.display.flip()
 
-        LOGGER.debug('Game finished')
+        _LOGGER.debug('Game exited')

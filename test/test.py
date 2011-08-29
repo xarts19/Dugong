@@ -15,8 +15,8 @@ sys.path.insert(0, '../')
 
 import pygame
 
-from ancientempires.gamemap import GameMap
-from ancientempires.gamestates import GameStateManager
+from dugong.gamemap import GameMap
+from dugong.gamestates import GameStateManager
 
 class TestGameMap(unittest.TestCase):
 
