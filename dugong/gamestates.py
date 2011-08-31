@@ -46,7 +46,19 @@ class GameStateManager(object):
         return self._states['Game'].get_levels()
 
     def load_level(self, name):
+        self.state = 'Game'
         self._states['Game'].load_level(name)
+
+    def to_main_menu(self):
+        self.state = "MainMenu"
+        self._menu_transition = 0
+        self._states["Game"].get_image().set_alpha(255)
+
+    def to_game(self):
+        self.state = "Game"
+
+    def to_game_menu(self):
+        self.state = "InGameMenu"
 
     def _transition(self):
         '''Cool transition effect.'''
@@ -121,7 +133,6 @@ class _MainMenu(_MenuState):
 
     def _load_level(self, name):
         self._state_manager.load_level(name)
-        self._state_manager.state = 'Game'
         self._menus.pop()
 
     def _exit_game(self):
@@ -157,10 +168,10 @@ class _InGameMenu(_MenuState):
         self._menus.append(_Menu(menu_items))
 
     def _main_menu(self):
-        self._state_manager.state = "MainMenu"
+        self._state_manager.to_main_menu()
 
     def _resume_game(self):
-        self._state_manager.state = "Game"
+        self._state_manager.to_game()
 
     def _exit_game(self):
         self._exit_flag = True
@@ -206,14 +217,14 @@ class _Game(object):
         """Return false to stop the event loop and end the game."""
         for event in events:
             if event.type == pl.QUIT:
-                self._state_manager.state = "InGameMenu"
+                self._state_manager.to_game_menu()
             elif event.type == pl.MOUSEBUTTONUP:
                 if event.button == MOUSE_LEFT:
                     self._game.click_event(self._to_map_coords(pygame.mouse.get_pos()))
             elif event.type == pl.KEYDOWN:
                 if event.key == pl.K_ESCAPE:
                     if not self._game.cancel_event():
-                        self._state_manager.state = "InGameMenu"
+                        self._state_manager.to_game_menu()
         return True
 
     def update(self):

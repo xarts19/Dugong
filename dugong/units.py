@@ -48,16 +48,13 @@ class UnitFactory(object):
         # init info from type
         type_info = unit_types[unit_type]
 
-        image = utils.load_image(type_info['imagename'])
+        image = utils.load_image(type_info['name']+'.png')
         if 'animation' in type_info:
             images = map(load_image, options['animation'].split(','))
         else:
             images = [image]
-        #defence = type_info['defence']
-        #speed = type_info['speed']
-        #heal = type_info['heal']
-        max_moves = float(type_info['max_moves'])
-        _range = int(type_info['range'])
+        max_moves = type_info['max_moves']
+        _range = type_info['range']
         name = type_info['name']
         unit_class = getattr(sys.modules[__name__], name.capitalize(), Unit)
         unit = unit_class(unit_type, image, images,

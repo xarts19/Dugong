@@ -1,5 +1,5 @@
 
-levels = {
+LEVELS = {
     '1': {
         'map':  '''wwlmmmllll
                    lwllmflrcl

@@ -191,9 +191,9 @@ class _TileFactory(object):
         # init info from type
         type_info = tile_types[tile_type]
         tile_type = type_info['name']
-        defence = int(type_info['defence'])
-        pass_cost = float(type_info['pass_cost'])
-        heal = int(type_info['heal'])
+        defence = type_info['defence']
+        pass_cost = type_info['pass_cost']
+        heal = type_info['heal']
         # create tile
         tile = Tile(tile_type, defence, pass_cost, heal, pos)
         return tile

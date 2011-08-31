@@ -28,7 +28,7 @@ TILE_SIZE = 50
 
 def load_configs():
     _LOGGER.debug('Loading configs')
-    from conifgs import config
+    from configs import config
     global SCREEN_SIZE
     global TILE_SIZE
     SCREEN_SIZE = config.graphics['screen_mode']
@@ -36,12 +36,12 @@ def load_configs():
 
 
 def load_levels_info():
-    '''Format info a little, check for integrity and return.'''
+    '''Format info a little, check for integrity and return levels info.'''
     _LOGGER.debug("Loading levels data")
-    from conifgs.levels import levels
+    from configs.levels import LEVELS
     # transform to more friendly for game format
     # format map from multiline string to 2d array of letters
-    levels_info = levels
+    levels_info = LEVELS
     for name, level in levels_info.items():
         level['map'] = [list(line.lstrip().rstrip()) for line in level['map'].split('\n')]
         # all rows should be the same size
@@ -51,18 +51,18 @@ def load_levels_info():
     return levels_info
 
 
-def load_tile_types(filename='tile_types', season='summer'):
+def load_tile_types():
     '''Return tile types dict read from config file.'''
     _LOGGER.debug("Loading tiles data")
-    tiles_info = _load_config(filename)
-    return tiles_info
+    from configs.tiletypes import TILE_TYPES
+    return TILE_TYPES
 
 
 def load_unit_types(filename='unit_types'):
     '''Return unit types dict read from config file.'''
     _LOGGER.debug("Loading units data")
-    units_info = _load_config(filename)
-    return units_info
+    from configs.unittypes import UNIT_TYPES
+    return UNIT_TYPES
 
 
 def _load_config(filename, section=None):
