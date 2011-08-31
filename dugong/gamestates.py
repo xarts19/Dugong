@@ -9,6 +9,7 @@ __version__ = "Version: 0.0.1 "
 __date__ = "Date: 2011-08-25 16:01:50.179836 "
 
 import logging
+from functools import partial
 
 import pygame
 import pygame.locals as pl
@@ -41,6 +42,12 @@ class GameStateManager(object):
             image = self._states[self.state].get_image()
         return image
 
+    def get_levels(self):
+        return self._states['Game'].get_levels()
+
+    def load_level(self, name):
+        self._states['Game'].load_level(name)
+
     def _transition(self):
         '''Cool transition effect.'''
         if self.state == "InGameMenu" and self._menu_transition < 32:
@@ -63,30 +70,114 @@ class GameStateManager(object):
         image.blit(menu_image, (0, 0))
         return image
 
-class _MainMenu(object):
+class _MenuState(object):
+
+    def __init__(self, state_manager, background):
+        self._state_manager = state_manager
+        self._image = pygame.Surface((utils.SCREEN_SIZE))
+        self._background = utils.load_image(background,
+                                            size=utils.SCREEN_SIZE)
+        self._menus = []
+        self._init_menu()
+
+    def _init_menu(self):
+        _LOGGER.warning("Calling stub method _init_menu of %s", self)
+
+    def _render_image(self):
+        self._image.fill((0,0,0,155))
+        self._image.blit(self._background, (0, 0))
+        self._menus[-1].draw(self._image)
+        return self._image
+
+    def update(self):
+        mouse_pos = pygame.mouse.get_pos()
+        self._menus[-1].check_selected(mouse_pos)
+
+    def get_image(self):
+        return self._render_image()
+
+
+class _MainMenu(_MenuState):
 
     def __init__(self, state_manager):
+        super(_MainMenu, self).__init__(state_manager, 'main_menu.jpg')
         _LOGGER.debug("Creating main menu")
-        self._state_manager = state_manager
-        self._init_graphics()
+        self._exit_flag = False
 
-    def _init_graphics(self):
-        self._image = pygame.Surface(utils.SCREEN_SIZE)
+    def _init_menu(self):
+        menu_items = (("Select level", self._select_menu),
+                      ("Exit game", self._exit_game),
+                      )
+        self._menus.append(_Menu(menu_items))
+
+    def _select_menu(self):
+        menu_items = []
+        levels = self._state_manager.get_levels()
+        for level in levels:
+            load = partial(self._load_level, name=level)
+            menu_items.append((level, load))
+        menu_items.append(("Back", self._back))
+        self._menus.append(_Menu(menu_items))
+
+    def _load_level(self, name):
+        self._state_manager.load_level(name)
+        self._state_manager.state = 'Game'
+        self._menus.pop()
+
+    def _exit_game(self):
+        self._exit_flag = True
+
+    def _back(self):
+        self._menus.pop()
 
     def handle_events(self, events):
-        # poll for pygame events
+        if self._exit_flag:
+            return False
         for event in events:
             if event.type == pl.QUIT:
                 return False
-        # XXX: redirect to game
-        self._state_manager.state = "Game"
+            elif event.type == pl.MOUSEBUTTONUP:
+                if event.button == MOUSE_LEFT:
+                    self._menus[-1].execute()
         return True
 
-    def update(self):
-        pass
 
-    def get_image(self):
-        return self._image
+class _InGameMenu(_MenuState):
+
+    def __init__(self, state_manager):
+        super(_InGameMenu, self).__init__(state_manager, 'in_game_menu.jpg')
+        _LOGGER.debug("Creating in game menu")
+        self._exit_flag = False
+
+    def _init_menu(self):
+        menu_items = (("Resume game", self._resume_game),
+                      ("Main menu", self._main_menu),
+                      ("Exit game", self._exit_game),
+                      )
+        self._menus.append(_Menu(menu_items))
+
+    def _main_menu(self):
+        self._state_manager.state = "MainMenu"
+
+    def _resume_game(self):
+        self._state_manager.state = "Game"
+
+    def _exit_game(self):
+        self._exit_flag = True
+
+    def handle_events(self, events):
+        if self._exit_flag:
+            return False
+        for event in events:
+            if event.type == pl.QUIT:
+                return False
+            elif event.type == pl.MOUSEBUTTONUP:
+                if event.button == MOUSE_LEFT:
+                    self._menus[-1].execute()
+            elif event.type == pl.KEYDOWN:
+                if event.key == pl.K_ESCAPE:
+                    self._resume_game()
+        return True
 
 
 class _Game(object):
@@ -94,20 +185,22 @@ class _Game(object):
     def __init__(self, state_manager):
         _LOGGER.debug("Creating game")
         self._state_manager = state_manager
+        self._game = None
         self._init_game()
         self._init_graphics()
 
     def _init_game(self):
         self._game = game.Game()
 
-
     def _init_graphics(self):
         self._background = utils.load_image('game_background.jpg',
                                             size=utils.SCREEN_SIZE)
-        # calculate map shift from the edge of the screen
-        size = utils.SCREEN_SIZE
-        w, h = self._game.get_map_size()
-        self._shift = (size[0] - w) / 2, (size[1] - h) / 2
+
+    def get_levels(self):
+        return self._game.get_levels()
+
+    def load_level(self, name):
+        self._game.load_level(name)
 
     def handle_events(self, events):
         """Return false to stop the event loop and end the game."""
@@ -133,68 +226,26 @@ class _Game(object):
                               self._from_map_coords((0, 0)))
         return self._background
 
+    def _get_shift(self):
+        # calculate map shift from the edge of the screen
+        size = utils.SCREEN_SIZE
+        w, h = self._game.get_map_size()
+        shift = (size[0] - w) / 2, (size[1] - h) / 2
+        return shift
+
     def _to_map_coords(self, pos):
         '''Correction to coords due to drawing the map in the center.'''
-        return pos[0] - self._shift[0], pos[1] - self._shift[1]
+        shift = self._get_shift()
+        return pos[0] - shift[0], pos[1] - shift[1]
 
     def _from_map_coords(self, pos):
         '''Backwards correction.'''
-        return pos[0] + self._shift[0], pos[1] + self._shift[1]
+        shift = self._get_shift()
+        return pos[0] + shift[0], pos[1] + shift[1]
 
     def get_image(self):
         return self._render_image()
 
-
-class _InGameMenu(object):
-
-    def __init__(self, state_manager):
-        _LOGGER.debug("Creating in game menu")
-        self._state_manager = state_manager
-        self._init_graphics()
-        self._exit_flag = False
-
-    def _init_graphics(self):
-        self._background = pygame.Surface((utils.SCREEN_SIZE))
-        self._image = pygame.Surface((utils.SCREEN_SIZE))
-        self._background = utils.load_image('in_game_menu.jpg',
-                                            size=utils.SCREEN_SIZE)
-        menu_items = (("Resume game", self._resume_game),
-                      ("Exit game", self._exit_game),
-                      )
-        self._menu = _Menu(menu_items)
-
-    def _render_image(self):
-        self._image.fill((0,0,0,155))
-        self._image.blit(self._background, (0, 0))
-        self._menu.draw(self._image)
-        return self._image
-
-    def _resume_game(self):
-        self._state_manager.state = "Game"
-
-    def _exit_game(self):
-        self._exit_flag = True
-
-    def handle_events(self, events):
-        if self._exit_flag:
-            return False
-        for event in events:
-            if event.type == pl.QUIT:
-                return False
-            elif event.type == pl.MOUSEBUTTONUP:
-                if event.button == MOUSE_LEFT:
-                    self._menu.execute()
-            elif event.type == pl.KEYDOWN:
-                if event.key == pl.K_ESCAPE:
-                    self._resume_game()
-        return True
-
-    def update(self):
-        mouse_pos = pygame.mouse.get_pos()
-        self._menu.check_selected(mouse_pos)
-
-    def get_image(self):
-        return self._render_image()
 
 class _Menu(object):
 

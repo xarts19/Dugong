@@ -24,30 +24,36 @@ class Game(object):
 
     def __init__(self):
         _LOGGER.debug('Initializing game map')
-        self._map = gamemap.GameMap()
         self._unit_factory = units.UnitFactory()
-        self._players = Players([])
-        self._selection = Selection(self._map, self._players)
+        self._players = None
+        self._map = None
+        self._selection = None
+        self._image = None
         # FIXME: find where to put this
         self._levels = utils.load_levels_info()
-        self.load_level('1')
-        # works only after level was loaded (needs to know map size):
-        self._init_graphics()
 
     def _init_graphics(self):
         '''Create surface for map, units and effects.'''
         w, h = self.get_map_size()
         self._image = pygame.Surface((w, h))
 
+    def get_levels(self):
+        return self._levels.keys()
+
     def load_level(self, name):
         '''Load level from file with given number. Init map and units.'''
         _LOGGER.debug("Initializing level '%s'", name)
+        self._players = Players([])
+        self._map = gamemap.GameMap()
+        self._selection = Selection(self._map, self._players)
+
         level_info = self._levels[name]
         self._map.load_level(level_info)
         for i, units in enumerate(level_info['units']):
             player = Player(str(i))
             self._players.add(player)
             self._init_units(units, player)
+        self._init_graphics()
 
     def _init_units(self, units, player):
         '''Create units from level specs for given player.'''
