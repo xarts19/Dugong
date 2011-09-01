@@ -58,11 +58,7 @@ class GameStateManager(object):
         self.states.append(_InGameMenu(self))
 
     def attack(self, attacker, attacked):
-        melee = True
-        if abs(attacker.tile.pos[0] - attacked.tile.pos[0]) \
-                + abs(attacker.tile.pos[1] - attacked.tile.pos[1]) > 1:
-            melee = False
-        self.state = "Attack"
+        self.states.append(_Attack(self, attacker, attacked))
 
     def _transition(self):
         '''Cool transition effect.'''
@@ -89,6 +85,98 @@ class GameStateManager(object):
 
         self._transition_info = (last_state, trans, step, prev_image, curr_image)
         return image
+
+
+class _Game(object):
+
+    def __init__(self, state_manager, level_info):
+        _LOGGER.debug("Creating game")
+        self._state_manager = state_manager
+        self._game = game.Game(level_info)
+        self._background = utils.load_image('game_background.jpg',
+                                            size=utils.SCREEN_SIZE)
+
+    def get_levels(self):
+        return self._game.get_levels()
+
+    def load_level(self, name):
+        self._game.load_level(name)
+
+    def handle_events(self, events):
+        """Return false to stop the event loop and end the game."""
+        for event in events:
+            if event.type == pl.QUIT:
+                self._state_manager.pause()
+            elif event.type == pl.MOUSEBUTTONUP:
+                if event.button == MOUSE_LEFT:
+                    res = self._game.click_event(self._to_map_coords(pygame.mouse.get_pos()))
+                    if res:
+                        if res[0] == 'attack':
+                            self._state_manager.attack(res[1], res[2])
+            elif event.type == pl.KEYDOWN:
+                if event.key == pl.K_ESCAPE:
+                    if not self._game.cancel_event():
+                        self._state_manager.pause()
+        return True
+
+    def update(self):
+        self._game.mouseover_event(self._to_map_coords(pygame.mouse.get_pos()))
+        self._game.update(pygame.time.get_ticks())
+
+    def _render_image(self):
+        # draw screen
+        self._background.blit(self._game.render_image(),
+                              self._from_map_coords((0, 0)))
+        return self._background
+
+    def _get_shift(self):
+        # calculate map shift from the edge of the screen
+        size = utils.SCREEN_SIZE
+        w, h = self._game.get_map_size()
+        shift = (size[0] - w) / 2, (size[1] - h) / 2
+        return shift
+
+    def _to_map_coords(self, pos):
+        '''Correction to coords due to drawing the map in the center.'''
+        shift = self._get_shift()
+        return pos[0] - shift[0], pos[1] - shift[1]
+
+    def _from_map_coords(self, pos):
+        '''Backwards correction.'''
+        shift = self._get_shift()
+        return pos[0] + shift[0], pos[1] + shift[1]
+
+    def get_image(self):
+        return self._render_image()
+
+
+class _Attack(object):
+
+    def __init__(self, state_manager, attacker, attacked):
+        self._state_manager = state_manager
+        self._image = pygame.Surface((utils.SCREEN_SIZE))
+        self.attacker = attacker
+        self.attacked = attacked
+        self.melee = True
+        if abs(attacker.tile.pos[0] - attacked.tile.pos[0]) \
+                + abs(attacker.tile.pos[1] - attacked.tile.pos[1]) > 1:
+            self.melee = False
+
+    def handle_events(self, events):
+        """Return false to stop the event loop and end the game."""
+        for event in events:
+            if event.type == pl.QUIT:
+                self._state_manager.pause()
+            elif event.type == pl.KEYDOWN:
+                if event.key == pl.K_ESCAPE:
+                    self._state_manager.pause()
+        return True
+
+    def update(self):
+        pass
+
+    def get_image(self):
+        return self._image
 
 
 class _MenuState(object):
@@ -198,69 +286,6 @@ class _InGameMenu(_MenuState):
                 if event.key == pl.K_ESCAPE:
                     self._back()
         return True
-
-
-class _Game(object):
-
-    def __init__(self, state_manager, level_info):
-        _LOGGER.debug("Creating game")
-        self._state_manager = state_manager
-        self._game = game.Game(level_info)
-        self._background = utils.load_image('game_background.jpg',
-                                            size=utils.SCREEN_SIZE)
-
-    def get_levels(self):
-        return self._game.get_levels()
-
-    def load_level(self, name):
-        self._game.load_level(name)
-
-    def handle_events(self, events):
-        """Return false to stop the event loop and end the game."""
-        for event in events:
-            if event.type == pl.QUIT:
-                self._state_manager.pause()
-            elif event.type == pl.MOUSEBUTTONUP:
-                if event.button == MOUSE_LEFT:
-                    res = self._game.click_event(self._to_map_coords(pygame.mouse.get_pos()))
-                    if res:
-                        if res[0] == 'attack':
-                            self._state_manager.attack(res[1], res[2])
-            elif event.type == pl.KEYDOWN:
-                if event.key == pl.K_ESCAPE:
-                    if not self._game.cancel_event():
-                        self._state_manager.pause()
-        return True
-
-    def update(self):
-        self._game.mouseover_event(self._to_map_coords(pygame.mouse.get_pos()))
-        self._game.update(pygame.time.get_ticks())
-
-    def _render_image(self):
-        # draw screen
-        self._background.blit(self._game.render_image(),
-                              self._from_map_coords((0, 0)))
-        return self._background
-
-    def _get_shift(self):
-        # calculate map shift from the edge of the screen
-        size = utils.SCREEN_SIZE
-        w, h = self._game.get_map_size()
-        shift = (size[0] - w) / 2, (size[1] - h) / 2
-        return shift
-
-    def _to_map_coords(self, pos):
-        '''Correction to coords due to drawing the map in the center.'''
-        shift = self._get_shift()
-        return pos[0] - shift[0], pos[1] - shift[1]
-
-    def _from_map_coords(self, pos):
-        '''Backwards correction.'''
-        shift = self._get_shift()
-        return pos[0] + shift[0], pos[1] + shift[1]
-
-    def get_image(self):
-        return self._render_image()
 
 
 class _Menu(object):

@@ -89,44 +89,37 @@ class GameMap(object):
         and if path is valid for this unit.
         Orig and dest is included.
         '''
-
-        def find(start_i, start_j, moves, dest):
-            '''Breadth first search for path from i, j to dest.'''
-            final_path = None
-            cost_left = 0
-            # add starting tile to fring
-            #fringe = [Path(start_i, start_j)]
-            fringe = fringe = [([(start_i, start_j)], moves)]
-            while len(fringe) > 0:
-                path = fringe[0]
-                del fringe[0]
-                for di, dj in ((0, 1), (1, 0), (0, -1), (-1, 0)):
-                    i, j = path[0][-1]
-                    tile = self.tile_at_pos(i + di, j + dj)
-                    if tile:
-                        moves_left = path[1] - tile.pass_cost
-                        if tile.type is not 'water' and not tile.unit and moves_left >= 0:
-                            if tile is dest:
-                                final_path = path[0] + [(i + di, j + dj)]
-                                lenghth = moves_left
-                                fringe = []
-                                break
-                            fringe.append((path[0]+[(i + di, j + dj)], moves_left))
-            return [self.tile_at_pos(i, j) for i, j in final_path], cost_left
-
-        moves = orig.unit.moves_left
-        path, cost_left = find(orig.pos[0], orig.pos[1], moves, dest)
-        p = Path()
-        p.tiles = path
-        p.cost = moves - cost_left
-        return p
-
+        unit = orig.unit
+        moves = unit.moves_left
+        fringe = [Path(orig)]
+        final_path = Path(orig)
+        while fringe:
+            path = fringe[0]
+            del fringe[0]
+            for di, dj in ((0, 1), (1, 0), (0, -1), (-1, 0)):
+                i, j = path.end().pos
+                tile = self.tile_at_pos(i + di, j + dj)
+                if tile and not tile.unit:
+                    pass_cost = unit.get_pass_cost(tile)
+                    if pass_cost + path.cost <= moves:
+                        if tile is dest:
+                            final_path = Path(tile, path, pass_cost)
+                            fringe = None
+                            break
+                        else:
+                            fringe.append(Path(tile, path, pass_cost))
+        return final_path
 
 class Path(object):
 
-    def __init__(self, start_tile=None):
-        self.tiles = [start_tile]
-        self.cost = None
+    def __init__(self, tile, path=None, cost=None):
+        if path:
+            self.tiles = path.tiles[:]
+            self.cost = path.cost + cost
+        else:
+            self.tiles = []
+            self.cost = 0
+        self.tiles.append(tile)
 
     def pixels(self):
         '''List of coords of pixels of each tile in path.'''

@@ -92,6 +92,12 @@ class Unit(pygame.sprite.Sprite):
     def tile(self, value):
         self._tile = value
 
+    def get_pass_cost(self, tile):
+        if tile.type == 'water':
+            return 100
+        else:
+            return tile.pass_cost
+
     def _set_tile_owner(self):
         self._tile.owner = self._owner
 
