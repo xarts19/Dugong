@@ -47,36 +47,32 @@ class UnitFactory(object):
 
         # init info from type
         type_info = unit_types[unit_type]
+        name = type_info['name']
 
-        image = utils.load_image(type_info['name']+'.png')
+        image = utils.load_image(name + '.png')
         if 'animation' in type_info:
             images = map(load_image, options['animation'].split(','))
         else:
             images = [image]
-        max_moves = type_info['max_moves']
-        _range = type_info['range']
-        name = type_info['name']
         unit_class = getattr(sys.modules[__name__], name.capitalize(), Unit)
-        unit = unit_class(unit_type, image, images,
-                          tile, owner, max_moves, _range)
+        unit = unit_class(type_info, image, images, tile, owner)
         return unit
 
 
 class Unit(pygame.sprite.Sprite):
 
-    def __init__(self, unit_type, image, images,
-                 tile, owner, max_moves, _range):
+    def __init__(self, type_info, image, images, tile, owner):
         super(Unit, self).__init__()
-        self._type = unit_type
+        self._type = type_info['name']
         self._owner = owner
         self._tile = tile
         self._set_tile_owner()
         self._image = AnimatedImage(static=image, animated=images,
                                           coord=tile.coord)
         self.rect = self._image.get_rect()
-        self.moves_left = max_moves
-        self.max_moves = max_moves
-        self.range = _range
+        self.moves_left = type_info['max_moves']
+        self.max_moves = type_info['max_moves']
+        self.range = type_info['range']
 
     def can_attack(self, unit):
         i, j = self.tile.pos

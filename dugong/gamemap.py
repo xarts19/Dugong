@@ -190,23 +190,19 @@ class _TileFactory(object):
 
         # init info from type
         type_info = tile_types[tile_type]
-        tile_type = type_info['name']
-        defence = type_info['defence']
-        pass_cost = type_info['pass_cost']
-        heal = type_info['heal']
         # create tile
-        tile = Tile(tile_type, defence, pass_cost, heal, pos)
+        tile = Tile(type_info, pos)
         return tile
 
 
 class Tile(object):
     '''Single game tile. Stores attributes and image.'''
 
-    def __init__(self, tile_type, defence, pass_cost, heal, pos):
-        self.type = tile_type
-        self.defence = defence
-        self.pass_cost = pass_cost
-        self.heal = heal
+    def __init__(self, type_info, pos):
+        self.type = type_info['name']
+        self.defence = type_info['defence']
+        self.pass_cost = type_info['pass_cost']
+        self.heal = type_info['heal']
         self._owner = None
         self._pos = pos
         self._coord = pos[1] * utils.TILE_SIZE, pos[0] * utils.TILE_SIZE
