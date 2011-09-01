@@ -25,62 +25,71 @@ _LOGGER = logging.getLogger('main.gamestates')
 class GameStateManager(object):
 
     def __init__(self):
-        self._states = {"MainMenu" : _MainMenu(self),
-                            "Game" : _Game(self),
-                      "InGameMenu" : _InGameMenu(self),
-                       }
-        self.state = "MainMenu"
-        self._menu_transition = 0
+        self.states = [_MainMenu(self)]
+        self._levels = utils.load_levels_info()
+        self._transition_info = (1, False, 0, None, self.states[-1].get_image())
 
     def handle_events(self, events):
-        return self._states[self.state].handle_events(events)
+        return self.states[-1].handle_events(events)
 
     def get_rendered_screen(self):
-        self._states[self.state].update()
+        self.states[-1].update()
         image = self._transition()
         if not image:
-            image = self._states[self.state].get_image()
+            image = self.states[-1].get_image()
         return image
 
     def get_levels(self):
-        return self._states['Game'].get_levels()
+        return self._levels.keys()
 
-    def load_level(self, name):
-        self.state = 'Game'
-        self._states['Game'].load_level(name)
+    def game(self, name):
+        _LOGGER.debug("Initializing level '%s'", name)
+        self.states.append(_Game(self, level_info=self._levels[name]))
 
-    def to_main_menu(self):
-        self.state = "MainMenu"
-        self._menu_transition = 0
-        self._states["Game"].get_image().set_alpha(255)
+    def main_menu(self):
+        self.states = self.states[:1]
+        #self._menu_transition = 0
+        #self._states["Game"].get_image().set_alpha(255)
 
-    def to_game(self):
-        self.state = "Game"
+    def back(self):
+        self.states.pop()
 
-    def to_game_menu(self):
-        self.state = "InGameMenu"
+    def pause(self):
+        self.states.append(_InGameMenu(self))
+
+    def attack(self, attacker, attacked):
+        melee = True
+        if abs(attacker.tile.pos[0] - attacked.tile.pos[0]) \
+                + abs(attacker.tile.pos[1] - attacked.tile.pos[1]) > 1:
+            melee = False
+        self.state = "Attack"
 
     def _transition(self):
         '''Cool transition effect.'''
-        if self.state == "InGameMenu" and self._menu_transition < 32:
-            if self._menu_transition < 31:
-                self._menu_transition += 1
-            game_image = self._states["Game"].get_image()
-            menu_image = self._states["InGameMenu"].get_image()
-            game_image.set_alpha(255 - self._menu_transition * 5)
-            menu_image.set_alpha(self._menu_transition * 6)
-        elif self.state == "Game" and self._menu_transition > 0:
-            self._menu_transition -= 1
-            game_image = self._states["Game"].get_image()
-            menu_image = self._states["InGameMenu"].get_image()
-            game_image.set_alpha(255 - self._menu_transition * 5)
-            menu_image.set_alpha(self._menu_transition * 6)
-        else:
-            return None
-        image = pygame.Surface(utils.SCREEN_SIZE)
-        image.blit(game_image, (0, 0))
-        image.blit(menu_image, (0, 0))
+        image = None
+        last_state, trans, step, prev_image, curr_image = self._transition_info
+        #print self._transition_info
+        if last_state != len(self.states):
+            last_state = len(self.states)
+            trans = True
+            step = 0
+            prev_image = curr_image
+            curr_image = self.states[-1].get_image()
+
+        if trans:
+            curr_image = self.states[-1].get_image()
+            prev_image.set_alpha(255 - step * 5)
+            curr_image.set_alpha(step * 6)
+            step += 1
+            if step == 32:
+                trans = False
+            image = pygame.Surface(utils.SCREEN_SIZE)
+            image.blit(prev_image, (0, 0))
+            image.blit(curr_image, (0, 0))
+
+        self._transition_info = (last_state, trans, step, prev_image, curr_image)
         return image
+
 
 class _MenuState(object):
 
@@ -132,7 +141,7 @@ class _MainMenu(_MenuState):
         self._menus.append(_Menu(menu_items))
 
     def _load_level(self, name):
-        self._state_manager.load_level(name)
+        self._state_manager.game(name)
         self._menus.pop()
 
     def _exit_game(self):
@@ -161,17 +170,17 @@ class _InGameMenu(_MenuState):
         self._exit_flag = False
 
     def _init_menu(self):
-        menu_items = (("Resume game", self._resume_game),
+        menu_items = (("Resume", self._back),
                       ("Main menu", self._main_menu),
                       ("Exit game", self._exit_game),
                       )
         self._menus.append(_Menu(menu_items))
 
     def _main_menu(self):
-        self._state_manager.to_main_menu()
+        self._state_manager.main_menu()
 
-    def _resume_game(self):
-        self._state_manager.to_game()
+    def _back(self):
+        self._state_manager.back()
 
     def _exit_game(self):
         self._exit_flag = True
@@ -187,23 +196,16 @@ class _InGameMenu(_MenuState):
                     self._menus[-1].execute()
             elif event.type == pl.KEYDOWN:
                 if event.key == pl.K_ESCAPE:
-                    self._resume_game()
+                    self._back()
         return True
 
 
 class _Game(object):
 
-    def __init__(self, state_manager):
+    def __init__(self, state_manager, level_info):
         _LOGGER.debug("Creating game")
         self._state_manager = state_manager
-        self._game = None
-        self._init_game()
-        self._init_graphics()
-
-    def _init_game(self):
-        self._game = game.Game()
-
-    def _init_graphics(self):
+        self._game = game.Game(level_info)
         self._background = utils.load_image('game_background.jpg',
                                             size=utils.SCREEN_SIZE)
 
@@ -217,14 +219,17 @@ class _Game(object):
         """Return false to stop the event loop and end the game."""
         for event in events:
             if event.type == pl.QUIT:
-                self._state_manager.to_game_menu()
+                self._state_manager.pause()
             elif event.type == pl.MOUSEBUTTONUP:
                 if event.button == MOUSE_LEFT:
-                    self._game.click_event(self._to_map_coords(pygame.mouse.get_pos()))
+                    res = self._game.click_event(self._to_map_coords(pygame.mouse.get_pos()))
+                    if res:
+                        if res[0] == 'attack':
+                            self._state_manager.attack(res[1], res[2])
             elif event.type == pl.KEYDOWN:
                 if event.key == pl.K_ESCAPE:
                     if not self._game.cancel_event():
-                        self._state_manager.to_game_menu()
+                        self._state_manager.pause()
         return True
 
     def update(self):

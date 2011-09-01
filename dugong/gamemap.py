@@ -19,10 +19,10 @@ _LOGGER = logging.getLogger('main.map')
 class GameMap(object):
     '''Stores map image and array. Loads levels.'''
 
-    def __init__(self):
-        self._level = None
-        self._image = None
-        self._tile_factory = _TileFactory()
+    def __init__(self, level_info):
+        tile_factory = _TileFactory()
+        self._level = _init_level(level_info['map'], tile_factory)
+        self._image = utils._create_level_image(self._level, level_info)
 
     def __repr__(self):
         occupied_tiles = []
@@ -36,11 +36,6 @@ class GameMap(object):
     def image(self):
         '''Return complete map image'''
         return self._image
-
-    def load_level(self, level_info):
-        '''Reinitialize map with new level.'''
-        self._level = _init_level(level_info['map'], self._tile_factory)
-        self._image = utils._create_level_image(self._level, level_info)
 
     def tile_at_coord(self, x, y):
         '''Return tile object at pixel coords.'''

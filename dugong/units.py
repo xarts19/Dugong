@@ -73,6 +73,7 @@ class Unit(pygame.sprite.Sprite):
         self.moves_left = type_info['max_moves']
         self.max_moves = type_info['max_moves']
         self.range = type_info['range']
+        self.health = 100
 
     def can_attack(self, unit):
         i, j = self.tile.pos

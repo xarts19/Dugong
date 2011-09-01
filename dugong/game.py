@@ -22,38 +22,19 @@ _LOGGER = logging.getLogger('main.game')
 class Game(object):
     '''Represents current game state.'''
 
-    def __init__(self):
+    def __init__(self, level_info):
         _LOGGER.debug('Initializing game map')
         self._unit_factory = units.UnitFactory()
-        self._players = None
-        self._map = None
-        self._selection = None
-        self._image = None
-        # FIXME: find where to put this
-        self._levels = utils.load_levels_info()
-
-    def _init_graphics(self):
-        '''Create surface for map, units and effects.'''
-        w, h = self.get_map_size()
-        self._image = pygame.Surface((w, h))
-
-    def get_levels(self):
-        return self._levels.keys()
-
-    def load_level(self, name):
-        '''Load level from file with given number. Init map and units.'''
-        _LOGGER.debug("Initializing level '%s'", name)
         self._players = Players([])
-        self._map = gamemap.GameMap()
+        # create map
+        self._map = gamemap.GameMap(level_info)
         self._selection = Selection(self._map, self._players)
-
-        level_info = self._levels[name]
-        self._map.load_level(level_info)
-        for i, units in enumerate(level_info['units']):
+        self._image = pygame.Surface(self.get_map_size())
+        # load units
+        for i, units_info in enumerate(level_info['units']):
             player = Player(str(i))
             self._players.add(player)
-            self._init_units(units, player)
-        self._init_graphics()
+            self._init_units(units_info, player)
 
     def _init_units(self, units, player):
         '''Create units from level specs for given player.'''
@@ -110,8 +91,8 @@ class Game(object):
         elif selected and self._selection.reachable(pointed):
             self._selection.move()
         # try to attack if has enemy unit
-        elif selected and pointed.unit not in self._players.current:
-            pass
+        elif selected and pointed.unit and pointed.unit not in self._players.current:
+            return ('attack', selected.unit, pointed.unit)
         # try to select
         elif pointed.unit and pointed.unit in self._players.current:
             self._selection.select()
@@ -120,6 +101,7 @@ class Game(object):
             # castle menu
             # self._castle_menu()
             pass
+        return None
 
     def mouseover_event(self, pos):
         '''Highlight tile with the mouse.'''
