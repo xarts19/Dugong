@@ -6,6 +6,7 @@ All game logic and constraints is here.
 
 import logging
 
+import random
 import gamemap
 import units
 import utils
@@ -48,6 +49,10 @@ class Game(object):
             tile.unit = unit
             player.add(unit)
 
+    def kill_unit(self, unit):
+        unit.tile.unit = None
+        self._players.kill(unit)
+
     def get_map_size(self):
         return self._map.image.get_size()
 
@@ -65,6 +70,38 @@ class Game(object):
         self._selection.draw(self._image)
         return self._image
 
+    def _attack(self, attacker, attacked):
+        '''Compute attack result'''
+        # check attack type
+        melee = True
+        if abs(attacker.tile.pos[0] - attacked.tile.pos[0]) \
+                + abs(attacker.tile.pos[1] - attacked.tile.pos[1]) > 1:
+            melee = False
+        # calculate damage to attacked
+        damage = int(random.choice(range(*attacker.attack)) * (attacker.health / 100.0))
+        damage_to_attacked = damage - attacked.defence - attacked.tile.defence
+        if melee and attacked.health - damage_to_attacked > 0:
+            # calculate damage to attacker
+            damage = int(random.choice(range(*attacked.attack)) \
+                * (attacked.health - damage_to_attacked) / 100.0)
+            damage_to_attacker = damage - attacker.defence - attacker.tile.defence
+        else:
+            damage_to_attacker = 0
+        attacker.attackes -= 1
+        # show cut scene
+        self._attack_params = melee, attacker, attacked, damage_to_attacker, damage_to_attacked
+        return self._attack_params
+
+    def finish_attack(self):
+        melee, attacker, attacked, damage_to_attacker, damage_to_attacked = self._attack_params
+        attacked.health -= damage_to_attacked
+        if attacked.health <= 0:
+            self.kill_unit(attacked)
+        if melee:
+            attacker.health -= damage_to_attacker
+            if attacker.health <= 0:
+                self.kill_unit(attacker)
+
     def cancel_event(self):
         '''Return True if smth was canceled'''
         if self._selection.selected_tile:
@@ -75,32 +112,20 @@ class Game(object):
 
     def click_event(self, pos):
         '''Deside what to do on mouse click on particular tile.'''
-        # TODO: check game rules here e. g. its unit belong to current
-        # player
-        # TODO: check if player want to attack
         self.mouseover_event(pos)
-        pointed = self._selection.pointed_tile
-        selected = self._selection.selected_tile
-        # if smth selected try to cycle selection
-        if selected and pointed == selected:
-            # self._cycle_selection() between castle and unit
-            # castle menu
-            # self._castle_menu()
-            pass
-        # try to move if reachable
-        elif selected and self._selection.reachable(pointed):
-            self._selection.move()
-        # try to attack if has enemy unit
-        elif selected and pointed.unit and pointed.unit not in self._players.current:
-            return ('attack', selected.unit, pointed.unit)
-        # try to select
-        elif pointed.unit and pointed.unit in self._players.current:
+        # try to select unit
+        if self._selection.can_select():
             self._selection.select()
-        elif pointed.type is 'castle' \
-                and pointed.owner is self._players.current:
-            # castle menu
-            # self._castle_menu()
-            pass
+        # try to move if reachable
+        elif self._selection.can_move():
+            self._selection.move()
+            self._selection.unselect()
+        # try to attack if has enemy unit
+        elif self._selection.can_attack():
+            res = self._attack(self._selection.selected_tile.unit,
+                               self._selection.pointed_tile.unit)
+            self._selection.unselect()
+            return 'attack', res
         return None
 
     def mouseover_event(self, pos):
@@ -135,6 +160,10 @@ class Players(object):
     def __getitem__(self, i):
         return self.players[i]
 
+    def kill(self, unit):
+        for player in self.players:
+            player.remove(unit)
+
 class Player(pygame.sprite.RenderUpdates):
     '''Container for units.'''
 
@@ -166,13 +195,31 @@ class Selection():
         if new_tile and new_tile != self.pointed_tile:
             self.pointed_tile = new_tile
 
+    def can_select(self):
+        return (self.pointed_tile and self.pointed_tile.unit \
+                    and self.pointed_tile.unit in self._players.current) \
+            or (self.pointed_tile.type == 'castle' \
+                    and self.pointed_tile.owner is self._players.current)
+
+    def can_attack(self):
+        return self.selected_tile and self.pointed_tile.unit \
+            and self.pointed_tile.unit not in self._players.current \
+            and self.selected_tile.unit.can_attack(self.pointed_tile.unit)
+
+    def can_move(self):
+        return self.selected_tile and self.reachable(self.pointed_tile)
+
     def reachable(self, tile):
         '''Unit can get to that tile in one turn.'''
         if self._reachable:
             return tile in self._reachable
+        else:
+            return False
 
     def select(self):
         '''Immediately view reachable tiles for selected unit.'''
+        # self._cycle_selection() between castle and unit if
+        # selectiong same tile
         self._reachable = self._map.get_reachable(self.pointed_tile)
         self.selected_tile = self.pointed_tile
 
@@ -183,29 +230,24 @@ class Selection():
 
     def move(self):
         self.selected_tile.unit.move(self._path)
-        # unselect tile
-        self.selected_tile = None
 
     def unselect(self):
         self.selected_tile = None
 
     def draw(self, image):
         if self.pointed_tile:
+            if self.can_select():
+                image.blit(self._green_image, self.pointed_tile.coord)
             # pointing to enemy unit
-            if self.selected_tile and self.pointed_tile.unit \
-                    and self.pointed_tile.unit not in self._players.current \
-                    and self.selected_tile.unit.can_attack(self.pointed_tile.unit):
+            elif self.can_attack():
                 image.blit(self._target_image, self.pointed_tile.coord)
             # pointing to reachable tile
-            elif self.selected_tile and self.pointed_tile in self._reachable:
+            elif self.can_move():
                 image.blit(self._green_image, self.pointed_tile.coord)
                 self._draw_path(image)
             # pointing to unreachable tile
-            elif self.selected_tile and self.pointed_tile not in self._reachable:
+            elif not self.can_move():
                 image.blit(self._red_image, self.pointed_tile.coord)
-            # no tile selected
-            else:
-                image.blit(self._green_image, self.pointed_tile.coord)
         if self.selected_tile:
             image.blit(self._orange_image, self.selected_tile.coord)
             for tile in self._reachable:
@@ -220,4 +262,5 @@ class Selection():
         points = self._path.pixels()
         color = (255, 0, 0)
         pygame.draw.lines(image, color, False, points, 3)
+
 

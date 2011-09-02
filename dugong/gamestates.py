@@ -57,8 +57,12 @@ class GameStateManager(object):
     def pause(self):
         self.states.append(_InGameMenu(self))
 
-    def attack(self, attacker, attacked):
-        self.states.append(_Attack(self, attacker, attacked))
+    def attack(self, *args):
+        self.states.append(_Attack(self, *args))
+
+    def finish_attack(self):
+        self.states.pop()
+        self.states[-1].finish_attack()
 
     def _transition(self):
         '''Cool transition effect.'''
@@ -112,12 +116,15 @@ class _Game(object):
                     res = self._game.click_event(self._to_map_coords(pygame.mouse.get_pos()))
                     if res:
                         if res[0] == 'attack':
-                            self._state_manager.attack(res[1], res[2])
+                            self._state_manager.attack(*res[1])
             elif event.type == pl.KEYDOWN:
                 if event.key == pl.K_ESCAPE:
                     if not self._game.cancel_event():
                         self._state_manager.pause()
         return True
+
+    def finish_attack(self):
+        self._game.finish_attack()
 
     def update(self):
         self._game.mouseover_event(self._to_map_coords(pygame.mouse.get_pos()))
@@ -152,15 +159,14 @@ class _Game(object):
 
 class _Attack(object):
 
-    def __init__(self, state_manager, attacker, attacked):
+    def __init__(self, state_manager, melee, attacker, attacked, damage_to_attacker, damage_to_attacked):
         self._state_manager = state_manager
         self._image = pygame.Surface((utils.SCREEN_SIZE))
-        self.attacker = attacker
-        self.attacked = attacked
-        self.melee = True
-        if abs(attacker.tile.pos[0] - attacked.tile.pos[0]) \
-                + abs(attacker.tile.pos[1] - attacked.tile.pos[1]) > 1:
-            self.melee = False
+        #self.attacker = attacker
+        #self.attacked = attacked
+        #self.melee = melee
+        #self.
+
 
     def handle_events(self, events):
         """Return false to stop the event loop and end the game."""
@@ -172,8 +178,12 @@ class _Attack(object):
                     self._state_manager.pause()
         return True
 
+    def finish(self):
+        self._state_manager.finish_attack()
+
     def update(self):
-        pass
+        #TODO: add animation
+        self.finish()
 
     def get_image(self):
         return self._image
