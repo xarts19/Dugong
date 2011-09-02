@@ -79,15 +79,16 @@ class Game(object):
             melee = False
         # calculate damage to attacked
         damage = int(random.choice(range(*attacker.attack)) * (attacker.health / 100.0))
-        damage_to_attacked = damage - attacked.defence - attacked.tile.defence
+        damage_to_attacked = max(0, damage - attacked.defence - attacked.tile.defence)
         if melee and attacked.health - damage_to_attacked > 0:
             # calculate damage to attacker
             damage = int(random.choice(range(*attacked.attack)) \
                 * (attacked.health - damage_to_attacked) / 100.0)
-            damage_to_attacker = damage - attacker.defence - attacker.tile.defence
+            damage_to_attacker = max(0, damage - attacker.defence - attacker.tile.defence)
         else:
             damage_to_attacker = 0
         attacker.attackes -= 1
+        attacker.moves_left = 0
         # show cut scene
         self._attack_params = melee, attacker, attacked, damage_to_attacker, damage_to_attacked
         return self._attack_params
@@ -170,6 +171,16 @@ class Player(pygame.sprite.RenderUpdates):
     def __init__(self, name):
         super(Player, self).__init__()
         self.name = name
+
+    def draw(self, surf):
+        for sprite in self:
+             image = sprite.image
+             rect = sprite.rect
+             if isinstance(image, (list, tuple,)):
+                 for i in image:
+                     surf.blit(i, rect)
+             else:
+                 surf.blit(image, rect)
 
 
 class Selection():

@@ -48,6 +48,34 @@ LEVELS = {
         'season': 'summer',
         'background': 'land',
     },
+
+    'test': {
+        'map':   '''lllll
+                    lrrll
+                    lffll
+                    lmmll
+                    lllll''',
+        'units': [
+            # player 1
+            (
+                ('marksman', 0, 1),
+                ('general', 1, 1),
+                ('catapult', 2, 1),
+                ('swordsman', 3, 1),
+                ('earthgolem', 4, 1),
+            ),
+            # player 2
+            (
+                ('marksman', 0, 2),
+                ('general', 1, 2),
+                ('catapult', 2, 2),
+                ('swordsman', 3, 2),
+                ('earthgolem', 4, 2),
+            ),
+        ],
+        'season': 'summer',
+        'background': 'land',
+    },
 }
 
 

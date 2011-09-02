@@ -143,15 +143,14 @@ class AnimatedImage(object):
         self._color = (255, 0, 0)
         self._image = static
         self._images = animated
-        self._current = pygame.Surface((utils.TILE_SIZE, utils.TILE_SIZE))
-        self._current.set_colorkey((255,255,255))
+        self._current = self._image
         self._animated = False
         self._rect = self._image.get_rect()
         self._rect.topleft = coord
         self.health = 100
 
     def __call__(self):
-        return self._current
+        return self._current, self._font.render(str(self.health), True, self._color)
 
     def get_rect(self):
         return self._rect
@@ -163,8 +162,7 @@ class AnimatedImage(object):
                 self._frame += 1
                 if self._frame >= len(self._images):
                     self._frame = 0
-                self._current.fill((255,255,255))
-                self._current.blit(self._images[self._frame], (0, 0))
+                self._current = self._images[self._frame]
                 # move image
                 if self._path['current'] == len(self._path['path']) - 1:
                     self._rect.topleft = self._path['path'][-1]
@@ -174,9 +172,7 @@ class AnimatedImage(object):
                     self._rect.topleft = self._path['path'][self._path['current']]
                 self._last_update = t
         else:
-            self._current.fill((255,255,255))
-            self._current.blit(self._image, (0, 0))
-        self.draw_health(self._current)
+            self._current = self._image
 
     def start_animation(self, path, fps=60):
         # Track the time we started, and the time between updates.
@@ -192,11 +188,7 @@ class AnimatedImage(object):
 
     def stop_animation(self):
         self._animated = False
-        self._current = self._image
 
-    def draw_health(self, image):
-        health = self._font.render(str(self.health), True, self._color)
-        image.blit(health, (0, 0))
 
 def create_pixel_path(path):
     '''Create path in pixels from path in tiles.'''
