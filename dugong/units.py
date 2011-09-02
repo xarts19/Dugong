@@ -111,6 +111,7 @@ class Unit(pygame.sprite.Sprite):
         self.rect = self._image.get_rect()
 
     def move(self, path):
+        self.moves_left -= path.cost
         dest = path.end()
         self._image.start_animation(path)
         # remove unit from old tile
