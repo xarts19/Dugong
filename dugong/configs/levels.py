@@ -49,7 +49,17 @@ LEVELS = {
         'background': 'land',
     },
 
-    'test': {
+    'big_map_test': {
+        'map':   '''lrrrrrrrrllrrrrrrrrllrrrrrrrrllrrrrrrrrl
+                    lrlllrllrllrrrrrrrrllrrrrrrrrllrrrrrrrrl
+                    lllllllllllrrrrrrrrllrrrrrrrrllrrrrrrrrl''',
+        'units': [
+        ],
+        'season': 'summer',
+        'background': 'land',
+    },
+
+    'attack_test': {
         'map':   '''lllll
                     lrrll
                     lffll

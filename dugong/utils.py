@@ -148,9 +148,15 @@ def select_road_block(coords, level, season):
     name = '1.png'
     rotate = 0
     i, j = coords
-    # 5 relevant cells
-    N, S, W, E = level[i - 1][j], level[i + 1][j], \
-                       level[i][j - 1], level[i][j + 1]
+    # border object to substitute for missing boundary cells
+    class Border(object):
+        def __init__(self):
+            self.type = 'border'
+    # 4 relevant cells
+    N = level[i - 1][j] if i > 0 else Border()
+    S = level[i + 1][j] if i < len(level) - 1 else Border()
+    W = level[i][j - 1] if j > 0 else Border()
+    E = level[i][j + 1] if j < len(level[i]) - 1 else Border()
     R = ['road', 'bridge', 'castle', 'house']
     if N.type in R and S.type in R and W.type in R and E.type in R:
         name = 'crossroad.png'
@@ -183,6 +189,8 @@ def select_road_block(coords, level, season):
     elif E.type in R and N.type in R:
         name = 'turn.png'
         rotate = 270
+    else:
+        name = '1.png'
     full_name = os.path.join(season, 'road', name)
     return load_image(full_name, rotate=rotate)
 

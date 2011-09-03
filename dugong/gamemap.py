@@ -45,8 +45,9 @@ class GameMap(object):
 
     def tile_at_pos(self, i, j):
         '''Return tile object at matrix coords.'''
-        if len(self._level) > i and len(self._level[i]) > j \
-                and i >= 0 and j >= 0:
+        print i, j
+        if len(self._level) > i and i >= 0 \
+                and len(self._level[i]) > j and j >= 0:
             return self._level[i][j]
         else:
             # "Accesing tile outside of bounds: (%s, %s)", i, j
