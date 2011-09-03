@@ -52,8 +52,26 @@ LEVELS = {
     'big_map_test': {
         'map':   '''lrrrrrrrrllrrrrrrrrllrrrrrrrrllrrrrrrrrl
                     lrlllrllrllrrrrrrrrllrrrrrrrrllrrrrrrrrl
+                    lrrrrrrrrllrrrrrrrrllrrrrrrrrllrrrrrrrrl
+                    lrlllrllrllrrrrrrrrllrrrrrrrrllrrrrrrrrl
+                    lrrrrrrrrllrrrrrrrrllrrrrrrrrllrrrrrrrrl
+                    lrlllrllrllrrrrrrrrllrrrrrrrrllrrrrrrrrl
+                    lrrrrrrrrllrrrrrrrrllrrrrrrrrllrrrrrrrrl
+                    lrlllrllrllrrrrrrrrllrrrrrrrrllrrrrrrrrl
+                    lrrrrrrrrllrrrrrrrrllrrrrrrrrllrrrrrrrrl
+                    lrlllrllrllrrrrrrrrllrrrrrrrrllrrrrrrrrl
+                    lrrrrrrrrllrrrrrrrrllrrrrrrrrllrrrrrrrrl
+                    lrlllrllrllrrrrrrrrllrrrrrrrrllrrrrrrrrl
+                    lrrrrrrrrllrrrrrrrrllrrrrrrrrllrrrrrrrrl
+                    lrlllrllrllrrrrrrrrllrrrrrrrrllrrrrrrrrl
+                    lrrrrrrrrllrrrrrrrrllrrrrrrrrllrrrrrrrrl
+                    lrlllrllrllrrrrrrrrllrrrrrrrrllrrrrrrrrl
                     lllllllllllrrrrrrrrllrrrrrrrrllrrrrrrrrl''',
         'units': [
+            # player 1
+            (
+                ('marksman', 0, 1),
+            ),
         ],
         'season': 'summer',
         'background': 'land',

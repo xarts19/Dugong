@@ -45,7 +45,6 @@ class GameMap(object):
 
     def tile_at_pos(self, i, j):
         '''Return tile object at matrix coords.'''
-        print i, j
         if len(self._level) > i and i >= 0 \
                 and len(self._level[i]) > j and j >= 0:
             return self._level[i][j]

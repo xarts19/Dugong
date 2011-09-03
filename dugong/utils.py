@@ -25,14 +25,17 @@ DESCR_DIR = os.path.join(GAME_DIR, 'descr')
 # default configs
 SCREEN_SIZE = (1280, 720)
 TILE_SIZE = 50
+SCROLL_SPEED = 3
 
 def load_configs():
     _LOGGER.debug('Loading configs')
     from configs import config
     global SCREEN_SIZE
     global TILE_SIZE
+    global SCROLL_SPEED
     SCREEN_SIZE = config.graphics['screen_mode']
     TILE_SIZE = config.graphics['tile_size']
+    SCROLL_SPEED = config.graphics['scroll_speed']
 
 
 def load_levels_info():

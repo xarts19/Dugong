@@ -99,6 +99,7 @@ class _Game(object):
         self._game = game.Game(level_info)
         self._background = utils.load_image('game_background.jpg',
                                             size=utils.SCREEN_SIZE)
+        self.screen_position = [0, 0]
 
     def get_levels(self):
         return self._game.get_levels()
@@ -127,8 +128,24 @@ class _Game(object):
         self._game.finish_attack()
 
     def update(self):
+        self.move_view(pygame.mouse.get_pos())
         self._game.mouseover_event(self._to_map_coords(pygame.mouse.get_pos()))
         self._game.update(pygame.time.get_ticks())
+
+    def move_view(self, mouse):
+        if 5 < mouse[0] < 75 and self._to_map_coords((0, 0))[0] > 0:
+            self.screen_position[0] += utils.SCROLL_SPEED
+
+        elif utils.SCREEN_SIZE[0] - 75 < mouse[0] < utils.SCREEN_SIZE[0] - 5 \
+                and self._from_map_coords(self._game.get_map_size())[0] > utils.SCREEN_SIZE[0]:
+            self.screen_position[0] -= utils.SCROLL_SPEED
+
+        if 5 < mouse[1] < 75 and self._to_map_coords((0, 0))[1] > 0:
+            self.screen_position[1] += utils.SCROLL_SPEED
+
+        elif utils.SCREEN_SIZE[1] - 75 < mouse[1] < utils.SCREEN_SIZE[1] - 5 \
+                and self._from_map_coords(self._game.get_map_size())[1] > utils.SCREEN_SIZE[1]:
+            self.screen_position[1] -= utils.SCROLL_SPEED
 
     def _render_image(self):
         # draw screen
@@ -140,7 +157,8 @@ class _Game(object):
         # calculate map shift from the edge of the screen
         size = utils.SCREEN_SIZE
         w, h = self._game.get_map_size()
-        shift = (size[0] - w) / 2, (size[1] - h) / 2
+        view = self.screen_position
+        shift = (size[0] - w) / 2 + view[0], (size[1] - h) / 2 + view[1]
         return shift
 
     def _to_map_coords(self, pos):
