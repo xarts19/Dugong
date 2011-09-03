@@ -41,12 +41,14 @@ def load_configs():
 def load_levels_info():
     '''Format info a little, check for integrity and return levels info.'''
     _LOGGER.debug("Loading levels data")
-    from configs.levels import LEVELS
+    from configs.levels import LEVELS, ABBREVIATIONS
     # transform to more friendly for game format
     # format map from multiline string to 2d array of letters
     levels_info = LEVELS
     for name, level in levels_info.items():
-        level['map'] = [list(line.lstrip().rstrip()) for line in level['map'].split('\n')]
+        level['map'] = [[ABBREVIATIONS[char] for char in line.lstrip().rstrip()]
+                        for line in level['map'].split('\n')]
+        print level['map']
         # all rows should be the same size
         for row in level['map']:
             if len(row) != len(level['map'][0]):

@@ -52,6 +52,7 @@ class Game(object):
     def kill_unit(self, unit):
         unit.tile.unit = None
         self._players.kill(unit)
+        _LOGGER.debug("Unit killed: %s", unit)
 
     def get_map_size(self):
         return self._map.image.get_size()

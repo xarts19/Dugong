@@ -1,8 +1,7 @@
 UNIT_TYPES =  {
 
     'general': {
-    'name': 'general',
-    'shortname': 'g',
+    'name': 'General',
     #'animation': (general2.png,general3.png,general4.png,general5.png,general6.png,general7.png,general8.png,general9.png),
     'max_moves': 5,
     'range': 1,
@@ -11,8 +10,7 @@ UNIT_TYPES =  {
     },
 
     'swordsman': {
-    'name': 'swordsman',
-    'shortname': 's',
+    'name': 'Swordsman',
     'max_moves': 5,
     'range': 1,
     'attack': (60, 65),
@@ -20,8 +18,7 @@ UNIT_TYPES =  {
     },
 
     'marksman': {
-    'name': 'marksman',
-    'shortname': 'm',
+    'name': 'Marksman',
     'max_moves': 5,
     'range': 2,
     'attack': (60, 65),
@@ -29,8 +26,7 @@ UNIT_TYPES =  {
     },
 
     'earthgolem': {
-    'name': 'earthgolem',
-    'shortname': 'e',
+    'name': 'Earth Golem',
     'max_moves': 5,
     'range': 1,
     'attack': (60, 65),
@@ -38,8 +34,7 @@ UNIT_TYPES =  {
     },
 
     'catapult': {
-    'name': 'catapult',
-    'shortname': 'c',
+    'name': 'Catapult',
     'max_moves': 5,
     'range': 3,
     'attack': (60, 65),

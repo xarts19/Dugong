@@ -106,5 +106,14 @@ LEVELS = {
     },
 }
 
-
+ABBREVIATIONS = {
+    'l': 'land',
+    'f': 'forest',
+    'r': 'road',
+    'b': 'bridge',
+    'm': 'mountain',
+    'w': 'water',
+    'h': 'house',
+    'c': 'castle',
+}
 

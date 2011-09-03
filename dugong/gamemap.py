@@ -158,18 +158,10 @@ class _TileFactory(object):
 
     def __init__(self):
         self._tile_types = utils.load_tile_types()
-        # same dict but with keys as shortnames
-        self._tile_types_short = {}
-        for name, tile in self._tile_types.items():
-            self._tile_types_short[tile['shortname']] = tile
 
     def create_tile(self, tile_type, pos):
         '''Returns tile instance with attributes for provided type.'''
-        # check what dict use: with shortnames or normal names
-        if len(tile_type) > 1:
-            tile_types = self._tile_types
-        else:
-            tile_types = self._tile_types_short
+        tile_types = self._tile_types
 
         # check if such type exist
         if tile_type not in tile_types:
@@ -179,15 +171,15 @@ class _TileFactory(object):
         # init info from type
         type_info = tile_types[tile_type]
         # create tile
-        tile = Tile(type_info, pos)
+        tile = Tile(tile_type, type_info, pos)
         return tile
 
 
 class Tile(object):
     '''Single game tile. Stores attributes and image.'''
 
-    def __init__(self, type_info, pos):
-        self.type = type_info['name']
+    def __init__(self, tile_type, type_info, pos):
+        self.type = tile_type
         self.defence = type_info['defence']
         self.pass_cost = type_info['pass_cost']
         self.heal = type_info['heal']
@@ -197,7 +189,7 @@ class Tile(object):
         self._unit = None
 
     def __repr__(self):
-        return "Tile at (%s, %s)" % self._pos
+        return "<%s at %s>" % (self.type, self._pos)
 
     @property
     def owner(self):
