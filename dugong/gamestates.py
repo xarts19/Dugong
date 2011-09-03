@@ -54,8 +54,13 @@ class GameStateManager(object):
     def back(self):
         self.states.pop()
 
+    def skip(self):
+        self.states.pop()
+        self.states[-1].finish()
+
     def pause(self):
-        self.states.append(_InGameMenu(self))
+        cutscene = isinstance(self.states[-1], _Attack)
+        self.states.append(_InGameMenu(self, cutscene))
 
     def attack(self, *args):
         self.states.append(_Attack(self, *args))
@@ -201,7 +206,8 @@ class _Attack(object):
 
     def update(self):
         #TODO: add animation
-        self.finish()
+        #self.finish()
+        pass
 
     def get_image(self):
         return self._image
@@ -280,20 +286,26 @@ class _MainMenu(_MenuState):
 
 class _InGameMenu(_MenuState):
 
-    def __init__(self, state_manager):
+    def __init__(self, state_manager, cutscene=False):
+        self._cutscene = cutscene
         super(_InGameMenu, self).__init__(state_manager, 'in_game_menu.jpg')
         _LOGGER.debug("Creating in game menu")
         self._exit_flag = False
 
     def _init_menu(self):
-        menu_items = (("Resume", self._back),
+        menu_items = [("Resume", self._back),
                       ("Main menu", self._main_menu),
                       ("Exit game", self._exit_game),
-                      )
+                      ]
+        if self._cutscene:
+            menu_items.insert(1, ("Skip", self._skip))
         self._menus.append(_Menu(menu_items))
 
     def _main_menu(self):
         self._state_manager.main_menu()
+
+    def _skip(self):
+        self._state_manager.skip()
 
     def _back(self):
         self._state_manager.back()

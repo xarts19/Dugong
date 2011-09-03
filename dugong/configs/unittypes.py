@@ -44,32 +44,28 @@ UNIT_TYPES =  {
 # TODO: later
 """
     'watergolem': {
-    'name': 'watergolem',
-    'shortname': 'w',
+    'name': 'Watergolem',
     'max_moves': 5,
     'range': 3,
     'attack': (60, 65),
     },
 
     'dragon': {
-    'name': 'dragon',
-    'shortname': 'd',
+    'name': 'Dragon',
     'max_moves': 10,
     'range': 1,
     'attack': (60, 65),
     },
 
     'skeleton': {
-    'name': 'skeleton',
-    'shortname': 's',
+    'name': 'Skeleton',
     'max_moves': 5,
     'range': 1,
     'attack': (60, 65),
     },
 
     'wizard': {
-    'name': 'wizard',
-    'shortname': 'w',
+    'name': 'Wizard',
     'max_moves': 5,
     'range': 1,
     'attack': (60, 65),

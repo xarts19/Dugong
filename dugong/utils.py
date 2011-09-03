@@ -48,7 +48,6 @@ def load_levels_info():
     for name, level in levels_info.items():
         level['map'] = [[ABBREVIATIONS[char] for char in line.lstrip().rstrip()]
                         for line in level['map'].split('\n')]
-        print level['map']
         # all rows should be the same size
         for row in level['map']:
             if len(row) != len(level['map'][0]):
