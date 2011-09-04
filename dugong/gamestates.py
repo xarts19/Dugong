@@ -399,23 +399,56 @@ class _Menu(object):
 class StatusBar(object):
 
     def __init__(self, scr_size, w=700, h=70):
-        self._font = utils.Writer(12, (0, 255, 0))
-        self._image = utils.load_image('status.png', size=(w, h))
-        self._pos = (scr_size[0] - w) / 2, (scr_size[1] - h)
-        self._size = w, h
+        self.fontsize = 20
+        self.font = utils.Writer(self.fontsize - 4, (0, 255, 0))
+        self.background = utils.load_image('status.png', size=(w, h))
+        self.image = pygame.Surface((w, h))
+        self.pos = (scr_size[0] - w) / 2, (scr_size[1] - h)
+        self.size = w, h
 
     def get_image(self):
-        return self._image
+        return self.image
 
     def get_pos(self):
-        return self._pos
+        return self.pos
 
     def contains(self, coords):
-        return self._pos[0] <= coords[0] <= self._pos[0] + self._size[0] \
-            and self._pos[1] <= coords[1] <= self._pos[1] + self._size[1] \
+        return self.pos[0] <= coords[0] <= self.pos[0] + self.size[0] \
+            and self.pos[1] <= coords[1] <= self.pos[1] + self.size[1] \
 
     def update(self, info):
-        pass
+        if not info:
+            return
+
+        self.image.blit(self.background, (0, 0))
+
+        # player info
+        x = 10
+        player = self.font.render('Player:')
+        playername = self.font.render(info['player'])
+        self.image.blit(player, (x, 10))
+        self.image.blit(playername, (x, 10 + self.fontsize))
+
+        # unit info
+        x = 100
+        unit = info['unit']
+        if unit:
+            self.image.blit(unit.image[0], (x, 10))
+            health_moves = self.font.render("H: " + str(unit.health) + " M: " + str(unit.moves_left))
+            self.image.blit(health_moves, (x + utils.TILE_SIZE + 5, 10))
+            attack_defence = self.font.render("A: " + str(unit.attack) + " D: " + str(unit.defence))
+            self.image.blit(attack_defence, (x + utils.TILE_SIZE + 5, 10 + self.fontsize))
+
+        # tile info
+        x = 600
+        tile = info['tile']
+        if tile:
+            tile_str = self.font.render('Tile:')
+            self.image.blit(tile_str, (x, 10))
+            type_ = self.font.render(tile.type)
+            self.image.blit(type_, (x, 10 + self.fontsize))
+            defence = self.font.render("D: " + str(tile.defence))
+            self.image.blit(defence, (x, 10 + self.fontsize * 2))
 
     def handle_events(self, events):
         pass

@@ -209,6 +209,6 @@ class Writer(object):
 
     def render(self, string, color=None):
         if color:
-            return self.font.render(string, self.antialias, color)
+            return self.font.render(str(string), self.antialias, color)
         else:
-            return self.font.render(string, self.antialias, self.color)
+            return self.font.render(str(string), self.antialias, self.color)

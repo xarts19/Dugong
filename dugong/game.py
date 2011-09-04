@@ -279,7 +279,11 @@ class Selection():
     def gather_status_info(self):
         info = {}
         info['player'] = self._players.current.name
-        info['unit'] = self.pointed_tile.unit
-        info['tile'] = self.pointed_tile
+        if self.pointed_tile:
+            info['unit'] = self.pointed_tile.unit
+            info['tile'] = self.pointed_tile
+        else:
+            info['unit'] = None
+            info['tile'] = None
         return info
 
