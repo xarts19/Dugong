@@ -133,8 +133,7 @@ class AnimatedImage(object):
     '''
 
     def __init__(self, static, animated, coord):
-        self._font = pygame.font.Font(pygame.font.get_default_font(), 10)
-        self._color = (255, 0, 0)
+        self._font = utils.Writer(10, (255, 0, 0))
         self._image = static
         self._images = animated
         self._current = self._image
@@ -144,7 +143,7 @@ class AnimatedImage(object):
         self.health = 100
 
     def __call__(self):
-        return self._current, self._font.render(str(self.health), True, self._color)
+        return self._current, self._font.render(str(self.health))
 
     def get_rect(self):
         return self._rect

@@ -198,3 +198,17 @@ def select_road_block(coords, level, season):
     full_name = os.path.join(season, 'road', name)
     return load_image(full_name, rotate=rotate)
 
+
+class Writer(object):
+
+    def __init__(self, size, color):
+        self.size = size
+        self.color = color
+        self.antialias = True
+        self.font = pygame.font.Font(pygame.font.get_default_font(), self.size)
+
+    def render(self, string, color=None):
+        if color:
+            return self.font.render(string, self.antialias, color)
+        else:
+            return self.font.render(string, self.antialias, self.color)

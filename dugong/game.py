@@ -132,7 +132,7 @@ class Game(object):
 
     def mouseover_event(self, pos):
         '''Highlight tile with the mouse.'''
-        self._selection.highlight(pos)
+        return self._selection.highlight(pos)
 
 
 class Players(object):
@@ -206,6 +206,7 @@ class Selection():
         new_tile = self._map.tile_at_coord(*pos)
         if new_tile and new_tile != self.pointed_tile:
             self.pointed_tile = new_tile
+        return self.gather_status_info()
 
     def can_select(self):
         return (self.pointed_tile and self.pointed_tile.unit \
@@ -275,4 +276,10 @@ class Selection():
         color = (255, 0, 0)
         pygame.draw.lines(image, color, False, points, 3)
 
+    def gather_status_info(self):
+        info = {}
+        info['player'] = self._players.current.name
+        info['unit'] = self.pointed_tile.unit
+        info['tile'] = self.pointed_tile
+        return info
 

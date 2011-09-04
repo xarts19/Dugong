@@ -104,6 +104,7 @@ class _Game(object):
         self._game = game.Game(level_info)
         self._background = utils.load_image('game_background.jpg',
                                             size=utils.SCREEN_SIZE)
+        self._statusbar = StatusBar(utils.SCREEN_SIZE)
         self.screen_position = [0, 0]
 
     def get_levels(self):
@@ -134,7 +135,8 @@ class _Game(object):
 
     def update(self):
         self.move_view(pygame.mouse.get_pos())
-        self._game.mouseover_event(self._to_map_coords(pygame.mouse.get_pos()))
+        status_info = self._game.mouseover_event(self._to_map_coords(pygame.mouse.get_pos()))
+        self._statusbar.update(status_info)
         self._game.update(pygame.time.get_ticks())
 
     def move_view(self, mouse):
@@ -156,6 +158,8 @@ class _Game(object):
         # draw screen
         self._background.blit(self._game.render_image(),
                               self._from_map_coords((0, 0)))
+        self._background.blit(self._statusbar.get_image(),
+                              self._statusbar.get_pos())
         return self._background
 
     def _get_shift(self):
@@ -331,12 +335,9 @@ class _InGameMenu(_MenuState):
 class _Menu(object):
 
     def __init__(self, entries, color=(255, 0, 0), select_color=(0, 0, 255)):
-        self._font = pygame.font.Font(pygame.font.get_default_font(), 36)
-        self.color = color
-        self.select_color = select_color
         self._items = []
         for name, fnc in entries:
-            self._items.append(self.MenuItem(name, fnc, self._font))
+            self._items.append(self.MenuItem(name, fnc, color, select_color))
 
         # find total height of menus to know how far from top to start
         # drawing
@@ -356,9 +357,8 @@ class _Menu(object):
         '''Draw every entry.'''
         x, y = self.topleft
         for entry in self._items:
-            color = self.select_color if entry.selected else self.color
             entry.rect = x, y
-            image.blit(entry.render(color), (x, y))
+            image.blit(entry.render(), (x, y))
             y += entry.size[1]
 
     def check_selected(self, mouse_pos):
@@ -379,16 +379,43 @@ class _Menu(object):
 
     class MenuItem(object):
 
-        def __init__(self, name, fnc, font):
-            self._font = font
+        def __init__(self, name, fnc, color, sel_color):
+            self._font = utils.Writer(36, color)
+            self.sel_color = sel_color
             self.name = name
             self.fnc = fnc
             self.rect = 0, 0
             self.selected = False
-            image = self._font.render(name, True, (0, 0, 0))
+            image = self._font.render(name)
             self.size = image.get_size()
 
-        def render(self, color, antialias=True):
-            image = self._font.render(self.name, antialias, color)
-            return image
+        def render(self):
+            if self.selected:
+                return self._font.render(self.name, self.sel_color)
+            else:
+                return self._font.render(self.name)
 
+
+class StatusBar(object):
+
+    def __init__(self, scr_size, w=700, h=70):
+        self._font = utils.Writer(12, (0, 255, 0))
+        self._image = utils.load_image('status.png', size=(w, h))
+        self._pos = (scr_size[0] - w) / 2, (scr_size[1] - h)
+        self._size = w, h
+
+    def get_image(self):
+        return self._image
+
+    def get_pos(self):
+        return self._pos
+
+    def contains(self, coords):
+        return self._pos[0] <= coords[0] <= self._pos[0] + self._size[0] \
+            and self._pos[1] <= coords[1] <= self._pos[1] + self._size[1] \
+
+    def update(self, info):
+        pass
+
+    def handle_events(self, events):
+        pass
