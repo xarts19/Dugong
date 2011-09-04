@@ -136,6 +136,10 @@ def _create_level_image(level, level_info):
                     # select proper road part: crossroad,
                     # straight_road
                     tile_image = select_road_block((i, j), level, season)
+                elif tile.type == 'water':
+                    tile_image = select_water_block((i, j), level, season)
+                elif tile.type == 'bridge':
+                    tile_image = select_bridge_block((i, j), level, season)
                 else:
                     name = '1.png'
                     image_name = os.path.join(season, tile.type, name)
@@ -161,7 +165,7 @@ def select_road_block(coords, level, season):
     S = level[i + 1][j] if i < len(level) - 1 else Border()
     W = level[i][j - 1] if j > 0 else Border()
     E = level[i][j + 1] if j < len(level[i]) - 1 else Border()
-    R = ['road', 'bridge', 'castle', 'house']
+    R = ['road', 'bridge', 'castle', 'house', 'border']
     if N.type in R and S.type in R and W.type in R and E.type in R:
         name = 'crossroad.png'
     # branch
@@ -193,9 +197,78 @@ def select_road_block(coords, level, season):
     elif E.type in R and N.type in R:
         name = 'turn.png'
         rotate = 270
-    else:
-        name = '1.png'
     full_name = os.path.join(season, 'road', name)
+    return load_image(full_name, rotate=rotate)
+
+
+def select_water_block(coords, level, season):
+    name = '1.png'
+    rotate = 0
+    i, j = coords
+    # border object to substitute for missing boundary cells
+    class Border(object):
+        def __init__(self):
+            self.type = 'border'
+    # 4 relevant cells
+    N = level[i - 1][j] if i > 0 else Border()
+    S = level[i + 1][j] if i < len(level) - 1 else Border()
+    W = level[i][j - 1] if j > 0 else Border()
+    E = level[i][j + 1] if j < len(level[i]) - 1 else Border()
+    R = ['water', 'bridge', 'border']
+    if N.type in R and S.type in R and W.type in R and E.type in R:
+        name = 'open.png'
+    elif W.type in R and S.type in R and N.type in R:
+        name = 'shore.png'
+    elif W.type in R and E.type in R and S.type in R:
+        name = 'shore.png'
+        rotate = 90
+    elif S.type in R and E.type in R and N.type in R:
+        name = 'shore.png'
+        rotate = 180
+    elif W.type in R and E.type in R and N.type in R:
+        name = 'shore.png'
+        rotate = 270
+    elif W.type in R and S.type in R:
+        name = 'bay.png'
+    elif E.type in R and S.type in R:
+        name = 'bay.png'
+        rotate = 90
+    elif E.type in R and N.type in R:
+        name = 'bay.png'
+        rotate = 180
+    elif W.type in R and N.type in R:
+        name = 'bay.png'
+        rotate = 270
+    elif N.type in R and S.type in R:
+        name = 'river.png'
+    elif W.type in R and E.type in R:
+        name = 'river.png'
+        rotate = 90
+    full_name = os.path.join(season, 'water', name)
+    return load_image(full_name, rotate=rotate)
+
+
+def select_bridge_block(coords, level, season):
+    name = '1.png'
+    rotate = 0
+    i, j = coords
+    # border object to substitute for missing boundary cells
+    class Border(object):
+        def __init__(self):
+            self.type = 'border'
+    # 4 relevant cells
+    N = level[i - 1][j] if i > 0 else Border()
+    S = level[i + 1][j] if i < len(level) - 1 else Border()
+    W = level[i][j - 1] if j > 0 else Border()
+    E = level[i][j + 1] if j < len(level[i]) - 1 else Border()
+    R = ['road', 'bridge', 'border']
+    if W.type in R and E.type in R:
+        name = '1.png'
+        rotate = 0
+    elif N.type in R and S.type in R:
+        name = '1.png'
+        rotate = 90
+    full_name = os.path.join(season, 'bridge', name)
     return load_image(full_name, rotate=rotate)
 
 

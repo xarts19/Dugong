@@ -49,6 +49,23 @@ LEVELS = {
         'background': 'land',
     },
 
+    'river_test': {
+        'map':   '''lwwwwwwwwl
+                    lwwwwwwwwl
+                    llllwwllll
+                    lrlllwllrl
+                    lrlrrbrrrl
+                    lrlrlbllrl
+                    wbwbwwllll
+                    lrlrlwwlll
+                    lrrrrbbrrr
+                    lllllwwlll''',
+        'units': [
+        ],
+        'season': 'monochrome',
+        'background': 'land',
+    },
+
     'big_map_test': {
         'map':   '''lrrrrrrrrllrrrrrrrrllrrrrrrrrllrrrrrrrrl
                     lrlllrllrllrrrrrrrrllrrrrrrrrllrrrrrrrrl
