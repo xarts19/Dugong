@@ -2,7 +2,7 @@ TILE_TYPES = {
 
     'land': {
         'name': 'land',
-        'defence': 15,
+        'defence': 5,
         'pass_cost': 1.5,
         'heal': 0,
         'owner': None,
@@ -10,7 +10,7 @@ TILE_TYPES = {
 
     'forest': {
         'name': 'forest',
-        'defence': 35,
+        'defence': 10,
         'pass_cost': 2,
         'heal': 0,
         'owner': None,
@@ -34,7 +34,7 @@ TILE_TYPES = {
 
     'mountain': {
         'name': 'mountain',
-        'defence': 50,
+        'defence': 15,
         'pass_cost': 3,
         'heal': 0,
         'owner': None,
@@ -50,7 +50,7 @@ TILE_TYPES = {
 
     'house': {
         'name': 'house',
-        'defence': 50,
+        'defence': 15,
         'pass_cost': 1,
         'heal': 25,
         'owner': None,
@@ -58,7 +58,7 @@ TILE_TYPES = {
 
     'castle': {
         'name': 'castle',
-        'defence': 50,
+        'defence': 15,
         'pass_cost': 1,
         'heal': 25,
         'owner': None,

@@ -146,6 +146,7 @@ class Players(object):
 
     def __init__(self, players):
         self.players = []
+        self.current = None
         if players:
             self.players = players
             self._cur = 0
@@ -292,7 +293,7 @@ class Selection():
 
     def gather_status_info(self):
         info = {}
-        info['player'] = self._players.current.name
+        info['player'] = self._players.current
         if self.pointed_tile:
             info['unit'] = self.pointed_tile.unit
             info['tile'] = self.pointed_tile

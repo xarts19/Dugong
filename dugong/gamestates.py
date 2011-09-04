@@ -431,10 +431,12 @@ class StatusBar(object):
 
         # player info
         x = 10
-        player = self.font.render('Player:')
-        playername = self.font.render(info['player'])
-        self.image.blit(player, (x, 10))
-        self.image.blit(playername, (x, 10 + self.fontsize))
+        player = info['player']
+        if player:
+            player_str = self.font.render('Player:')
+            self.image.blit(player_str, (x, 10))
+            playername = self.font.render(player.name)
+            self.image.blit(playername, (x, 10 + self.fontsize))
 
         # unit info
         x = 100
