@@ -120,10 +120,16 @@ class _Game(object):
                 self._state_manager.pause()
             elif event.type == pl.MOUSEBUTTONUP:
                 if event.button == MOUSE_LEFT:
-                    res = self._game.click_event(self._to_map_coords(pygame.mouse.get_pos()))
-                    if res:
-                        if res[0] == 'attack':
-                            self._state_manager.attack(*res[1])
+                    if self._statusbar.contains(pygame.mouse.get_pos()):
+                        res = self._statusbar.click_event(pygame.mouse.get_pos())
+                        if res:
+                            if res == 'endturn':
+                                self._game.end_turn()
+                    else:
+                        res = self._game.click_event(self._to_map_coords(pygame.mouse.get_pos()))
+                        if res:
+                            if res[0] == 'attack':
+                                self._state_manager.attack(*res[1])
             elif event.type == pl.KEYDOWN:
                 if event.key == pl.K_ESCAPE:
                     if not self._game.cancel_event():
@@ -405,6 +411,7 @@ class StatusBar(object):
         self.image = pygame.Surface((w, h))
         self.pos = (scr_size[0] - w) / 2, (scr_size[1] - h)
         self.size = w, h
+        self.endturn_rect = 0, 0, 0, 0
 
     def get_image(self):
         return self.image
@@ -439,6 +446,12 @@ class StatusBar(object):
             attack_defence = self.font.render("A: " + str(unit.attack) + " D: " + str(unit.defence))
             self.image.blit(attack_defence, (x + utils.TILE_SIZE + 5, 10 + self.fontsize))
 
+        # actions
+        x = 500
+        endturn = self.font.render("End turn")
+        self.image.blit(endturn, (x, 10))
+        self.endturn_rect = x, 10, x + endturn.get_size()[0], 10 + endturn.get_size()[1]
+
         # tile info
         x = 600
         tile = info['tile']
@@ -450,5 +463,10 @@ class StatusBar(object):
             defence = self.font.render("D: " + str(tile.defence))
             self.image.blit(defence, (x, 10 + self.fontsize * 2))
 
-    def handle_events(self, events):
-        pass
+    def click_event(self, pos):
+        pos = pos[0] - self.pos[0], pos[1] - self.pos[1]
+        if self.endturn_rect[0] < pos[0] < self.endturn_rect[2] \
+                and self.endturn_rect[1] < pos[1] < self.endturn_rect[3]:
+            return "endturn"
+        return None
+

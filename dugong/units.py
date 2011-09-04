@@ -63,7 +63,8 @@ class Unit(pygame.sprite.Sprite):
         self.rect = self._image.get_rect()
         self.moves_left = type_info['max_moves']
         self.max_moves = type_info['max_moves']
-        self.attackes = 1
+        self.max_attacks = 1
+        self.attacks = 1
         self.range = type_info['range']
         self.health = 100
         self.attack = type_info['attack']
@@ -75,7 +76,7 @@ class Unit(pygame.sprite.Sprite):
     def can_attack(self, unit):
         i, j = self.tile.pos
         i_2, j_2 = unit.tile.pos
-        return abs(i - i_2) + abs(j - j_2) <= self.range and self.attackes > 0
+        return abs(i - i_2) + abs(j - j_2) <= self.range and self.attacks > 0
 
     @property
     def image(self):
@@ -115,6 +116,10 @@ class Unit(pygame.sprite.Sprite):
         # assign new unit to tile
         dest.unit = self
 
+    def end_turn(self):
+        self.moves_left = self.max_moves
+        self.attacks = self.max_attacks
+
 
 class Catapult(Unit):
 
@@ -124,7 +129,7 @@ class Catapult(Unit):
     def can_attack(self, unit):
         i, j = self.tile.pos
         i_2, j_2 = unit.tile.pos
-        return 1 < abs(i - i_2) + abs(j - j_2) <= self.range
+        return 1 < abs(i - i_2) + abs(j - j_2) <= self.range and self.attacks > 0
 
 
 class AnimatedImage(object):

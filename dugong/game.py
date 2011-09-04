@@ -88,7 +88,7 @@ class Game(object):
             damage_to_attacker = max(0, damage - attacker.defence - attacker.tile.defence)
         else:
             damage_to_attacker = 0
-        attacker.attackes -= 1
+        attacker.attacks -= 1
         attacker.moves_left = 0
         # show cut scene
         self._attack_params = melee, attacker, attacked, damage_to_attacker, damage_to_attacked
@@ -103,6 +103,12 @@ class Game(object):
             attacker.health -= damage_to_attacker
             if attacker.health <= 0:
                 self.kill_unit(attacker)
+
+    def end_turn(self):
+        for unit in self._players.current:
+            unit.end_turn()
+        self._players.next()
+        self._selection.unselect()
 
     def cancel_event(self):
         '''Return True if smth was canceled'''
@@ -142,12 +148,20 @@ class Players(object):
         self.players = []
         if players:
             self.players = players
+            self._cur = 0
             self.current = players[0]
 
     def add(self, player):
         if not self.players:
             self.current = player
+            self._cur = 0
         self.players.append(player)
+
+    def next(self):
+        self._cur += 1
+        if self._cur == len(self.players):
+            self._cur = 0
+        self.current = self.players[self._cur]
 
     def update(self, game_ticks):
         '''Recursive'''
