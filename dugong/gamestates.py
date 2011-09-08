@@ -67,7 +67,7 @@ class GameStateManager(object):
 
     def finish_attack(self):
         self.states.pop()
-        self.states[-1].finish_attack()
+        #self.states[-1].finish_attack()
 
     def _transition(self):
         '''Cool transition effect.'''
@@ -135,9 +135,6 @@ class _Game(object):
                     if not self._game.cancel_event():
                         self._state_manager.pause()
         return True
-
-    def finish_attack(self):
-        self._game.finish_attack()
 
     def update(self):
         self.move_view(pygame.mouse.get_pos())
@@ -209,6 +206,8 @@ class _Attack(object):
             elif event.type == pl.KEYDOWN:
                 if event.key == pl.K_ESCAPE:
                     self._state_manager.pause()
+                elif event.key == pl.K_s:
+                    self.finish()
         return True
 
     def finish(self):

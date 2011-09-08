@@ -7,6 +7,9 @@ TODO:
  - win condition
  - unit buying
  - money income
+ - draw attack radius just like walking radius
+ - add hint that 's' skips attack video
+ - make unit grey if it can't do anything
 
  - separate game logic, moke it ready to implement on a server side 
     (also graphics handling needs to be separated: game reads player input,

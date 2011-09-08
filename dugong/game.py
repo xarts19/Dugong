@@ -76,9 +76,6 @@ class Game(object):
         self._attack_params = attacker, attacked, damage_to_attacker, damage_to_attacked
         return self._attack_params
 
-    def finish_attack(self):
-        _LOGGER.warning("Stub method finish_attack.")
-
     def end_turn(self):
         for unit in self._players.current:
             unit.end_turn()
