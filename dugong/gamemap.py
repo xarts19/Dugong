@@ -55,6 +55,8 @@ class GameMap(object):
     def get_reachable(self, orig):
         '''Get cell that is reachable in one step by unit at this tile.'''
 
+        unit = orig.unit
+
         def dive(i, j, moves):
             if moves < 0:
                 return []
@@ -64,8 +66,8 @@ class GameMap(object):
             for di, dj in ((0, 1), (1, 0), (0, -1), (-1, 0)):
                 tile = self.tile_at_pos(i + di, j + dj)
                 if tile:
-                    moves_left = moves - tile.pass_cost
-                    if tile.type is not 'water' and not tile.unit and moves_left >= 0:
+                    moves_left = moves - unit.get_pass_cost(tile)
+                    if moves_left >= 0:
                         reachable.extend(dive(i + di, j + dj, moves_left))
             return reachable
 
@@ -74,15 +76,21 @@ class GameMap(object):
         moves = orig.unit.moves_left
         tiles = dive(i, j, moves)
 
-        # flying units
-        # swimming units
-
         # find reachable
         reachable = []
         for tile in tiles:
             if tile != orig and tile not in reachable:
                 reachable.append(tile)
         return reachable
+
+    def get_attackable(self, unit_tile):
+        unit = unit_tile.unit
+        attackable = []
+        for row in self._level:
+            for tile in row:
+                if tile.unit and unit.can_attack(tile.unit):
+                    attackable.append(tile)
+        return attackable
 
     def find_path(self, orig, dest):
         '''Return list of neighbour tiles that unit needs to traverse

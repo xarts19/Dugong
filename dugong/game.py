@@ -187,10 +187,13 @@ class Selection():
         self._red_image = utils.load_image('selection_red_bold.png')
         self._target_image = utils.load_image('target.png')
         self._reachable_image = utils.load_image('reachable.png')
-        self._reachable_image.set_alpha(123)
+        self._reachable_image.set_alpha(100)
+        self._attackable_image = utils.load_image('attackable.png')
+        self._attackable_image.set_alpha(100)
         self.pointed_tile = None
         self.selected_tile = None
         self._reachable = None
+        self._attackable = None
         self._path = None
 
     def highlight(self, pos):
@@ -225,6 +228,7 @@ class Selection():
         # self._cycle_selection() between castle and unit if
         # selectiong same tile
         self._reachable = self._map.get_reachable(self.pointed_tile)
+        self._attackable = self._map.get_attackable(self.pointed_tile)
         self.selected_tile = self.pointed_tile
 
     def _find_path(self):
@@ -256,6 +260,8 @@ class Selection():
             image.blit(self._orange_image, self.selected_tile.coord)
             for tile in self._reachable:
                 image.blit(self._reachable_image, tile.coord)
+            for tile in self._attackable:
+                image.blit(self._attackable_image, tile.coord)
 
     def _draw_path(self, image):
         '''Draw dots on the map for current path.'''

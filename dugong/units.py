@@ -125,7 +125,7 @@ class Unit(pygame.sprite.Sprite):
         self._tile = value
 
     def get_pass_cost(self, tile):
-        if tile.type == 'water':
+        if tile.type == 'water' or tile.unit:
             return 100
         else:
             return tile.pass_cost
