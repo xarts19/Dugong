@@ -6,6 +6,7 @@
 
 import sys
 import logging
+import random
 
 import pygame
 
@@ -55,7 +56,7 @@ class Unit(pygame.sprite.Sprite):
     def __init__(self, unit_type, type_info, image, images, tile, owner):
         super(Unit, self).__init__()
         self._type = unit_type
-        self._owner = owner
+        self.owner = owner
         self._tile = tile
         self._set_tile_owner()
         self._image = AnimatedImage(static=image, animated=images,
@@ -63,11 +64,11 @@ class Unit(pygame.sprite.Sprite):
         self.rect = self._image.get_rect()
         self.moves_left = type_info['max_moves']
         self.max_moves = type_info['max_moves']
-        self.max_attacks = 1
-        self.attacks = 1
-        self.range = type_info['range']
+        self._max_attacks = 1
+        self._attacks = 1
+        self._range = type_info['range']
         self.health = 100
-        self.attack = type_info['attack']
+        self.attack_damage = type_info['attack']
         self.defence = type_info['defence']
 
     def __repr__(self):
@@ -76,7 +77,40 @@ class Unit(pygame.sprite.Sprite):
     def can_attack(self, unit):
         i, j = self.tile.pos
         i_2, j_2 = unit.tile.pos
-        return abs(i - i_2) + abs(j - j_2) <= self.range and self.attacks > 0
+        in_range = abs(i - i_2) + abs(j - j_2) <= self._range
+        has_attacks = self._attacks > 0
+        is_enemy = unit.owner is not self.owner
+        return in_range and has_attacks and is_enemy
+
+    def riposte(self, unit):
+        '''Returns damage done or None if can't attack.'''
+        if abs(self.tile.pos[0] - unit.tile.pos[0]) \
+                + abs(self.tile.pos[1] - unit.tile.pos[1]) > 1:
+            return None
+        return self.attack(unit, riposte=True)
+
+    def attack(self, unit, riposte=False):
+        if not riposte:
+            self._attacks -= 1
+            self.moves_left = 0
+        damage = random.choice(range(*self.attack_damage)) * (self.health / 100.0)
+        damage_done = max(0, damage - unit.defence - unit.tile.defence)
+        unit.apply_damage(damage_done)
+        return damage_done
+
+    def apply_damage(self, damage):
+        self.health -= int(damage)
+
+    def is_alive(self):
+        return self.health > 0
+
+    def kill(self):
+        self.tile.unit = None
+        _LOGGER.debug("Unit killed: %s", self)
+
+    def end_turn(self):
+        self.moves_left = self.max_moves
+        self._attacks = self._max_attacks
 
     @property
     def image(self):
@@ -97,7 +131,7 @@ class Unit(pygame.sprite.Sprite):
             return tile.pass_cost
 
     def _set_tile_owner(self):
-        self._tile.owner = self._owner
+        self._tile.owner = self.owner
 
     def update(self, game_ticks):
         '''Redirect call to animated image.'''
@@ -116,10 +150,6 @@ class Unit(pygame.sprite.Sprite):
         # assign new unit to tile
         dest.unit = self
 
-    def end_turn(self):
-        self.moves_left = self.max_moves
-        self.attacks = self.max_attacks
-
 
 class Catapult(Unit):
 
@@ -129,7 +159,7 @@ class Catapult(Unit):
     def can_attack(self, unit):
         i, j = self.tile.pos
         i_2, j_2 = unit.tile.pos
-        return 1 < abs(i - i_2) + abs(j - j_2) <= self.range and self.attacks > 0
+        return super(Catapult, self).can_attack(unit) and abs(i - i_2) + abs(j - j_2) > 1
 
 
 class AnimatedImage(object):

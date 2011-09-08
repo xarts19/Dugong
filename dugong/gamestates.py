@@ -192,7 +192,7 @@ class _Game(object):
 
 class _Attack(object):
 
-    def __init__(self, state_manager, melee, attacker, attacked, damage_to_attacker, damage_to_attacked):
+    def __init__(self, state_manager, attacker, attacked, damage_to_attacker, damage_to_attacked):
         self._state_manager = state_manager
         self._image = pygame.Surface((utils.SCREEN_SIZE))
         #self.attacker = attacker
@@ -445,7 +445,7 @@ class StatusBar(object):
             self.image.blit(unit.image[0], (x, 10))
             health_moves = self.font.render("H: " + str(unit.health) + " M: " + str(unit.moves_left))
             self.image.blit(health_moves, (x + utils.TILE_SIZE + 5, 10))
-            attack_defence = self.font.render("A: " + str(unit.attack) + " D: " + str(unit.defence))
+            attack_defence = self.font.render("A: " + str(unit.attack_damage) + " D: " + str(unit.defence))
             self.image.blit(attack_defence, (x + utils.TILE_SIZE + 5, 10 + self.fontsize))
 
         # actions

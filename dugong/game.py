@@ -47,12 +47,8 @@ class Game(object):
         unit = self._unit_factory.create_unit(unit_type, tile, player)
         if unit:
             tile.unit = unit
+            tile.owner = player
             player.add(unit)
-
-    def kill_unit(self, unit):
-        unit.tile.unit = None
-        self._players.kill(unit)
-        _LOGGER.debug("Unit killed: %s", unit)
 
     def get_map_size(self):
         return self._map.image.get_size()
@@ -73,36 +69,15 @@ class Game(object):
 
     def _attack(self, attacker, attacked):
         '''Compute attack result'''
-        # check attack type
-        melee = True
-        if abs(attacker.tile.pos[0] - attacked.tile.pos[0]) \
-                + abs(attacker.tile.pos[1] - attacked.tile.pos[1]) > 1:
-            melee = False
-        # calculate damage to attacked
-        damage = int(random.choice(range(*attacker.attack)) * (attacker.health / 100.0))
-        damage_to_attacked = max(0, damage - attacked.defence - attacked.tile.defence)
-        if melee and attacked.health - damage_to_attacked > 0:
-            # calculate damage to attacker
-            damage = int(random.choice(range(*attacked.attack)) \
-                * (attacked.health - damage_to_attacked) / 100.0)
-            damage_to_attacker = max(0, damage - attacker.defence - attacker.tile.defence)
-        else:
-            damage_to_attacker = 0
-        attacker.attacks -= 1
-        attacker.moves_left = 0
+        damage_to_attacked = attacker.attack(attacked)
+        if attacked.is_alive():
+            damage_to_attacker = attacked.riposte(attacker)
         # show cut scene
-        self._attack_params = melee, attacker, attacked, damage_to_attacker, damage_to_attacked
+        self._attack_params = attacker, attacked, damage_to_attacker, damage_to_attacked
         return self._attack_params
 
     def finish_attack(self):
-        melee, attacker, attacked, damage_to_attacker, damage_to_attacked = self._attack_params
-        attacked.health -= damage_to_attacked
-        if attacked.health <= 0:
-            self.kill_unit(attacked)
-        if melee:
-            attacker.health -= damage_to_attacker
-            if attacker.health <= 0:
-                self.kill_unit(attacker)
+        _LOGGER.warning("Stub method finish_attack.")
 
     def end_turn(self):
         for unit in self._players.current:
@@ -177,9 +152,6 @@ class Players(object):
     def __getitem__(self, i):
         return self.players[i]
 
-    def kill(self, unit):
-        for player in self.players:
-            player.remove(unit)
 
 class Player(pygame.sprite.RenderUpdates):
     '''Container for units.'''
@@ -197,6 +169,14 @@ class Player(pygame.sprite.RenderUpdates):
                      surf.blit(i, rect)
              else:
                  surf.blit(image, rect)
+
+    def update(self, *args):
+        for unit in self:
+            if unit.is_alive():
+                unit.update(*args)
+            else:
+                unit.kill()
+                self.remove(unit)
 
 
 class Selection():
@@ -231,7 +211,6 @@ class Selection():
 
     def can_attack(self):
         return self.selected_tile and self.pointed_tile.unit \
-            and self.pointed_tile.unit not in self._players.current \
             and self.selected_tile.unit.can_attack(self.pointed_tile.unit)
 
     def can_move(self):

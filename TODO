@@ -1,0 +1,33 @@
+
+TODO:
+
+ - add interactivity to statusbar
+ - generalize animation (to allow different animations and moves for units)
+ - add jump animation
+ - win condition
+ - unit buying
+ - money income
+
+ - separate game logic, moke it ready to implement on a server side 
+    (also graphics handling needs to be separated: game reads player input,
+    sends it to server, server comes up with what is needed to be done,
+    sends it to clents, clients handles the actions)
+        Question: what to do with simple highlighting events that do need to know
+        about game logic but also need to be responsive and are too frequent???
+        Total separation seems undesirable.
+        Idea: batch mode. Server sends all possible actions for player once upon
+        each action. (E. g.: which tiles can be selected, where can all units go,
+        who they can attack, and client just uses precalculated information. Only
+        after player does something, server returns new possible actions (if any)
+        along with response on what to do about current action)
+
+LONG-TERM:
+
+ - effects (gradient, PAd, PyIgnition)
+ - AI
+ - networking
+ - players' profiles
+
+
+DONE (by date):
+
