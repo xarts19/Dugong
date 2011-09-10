@@ -9,6 +9,7 @@ import logging
 import pygame
 
 import utils
+import mapimagegen
 
 __author__ = "Xarts19 (xarts19@gmail.com)"
 __version__ = "Version: 0.0.1 "
@@ -22,7 +23,7 @@ class GameMap(object):
     def __init__(self, level_info):
         tile_factory = _TileFactory()
         self._level = _init_level(level_info['map'], tile_factory)
-        self._image = utils._create_level_image(self._level, level_info)
+        self._image = mapimagegen.create_level_image(self._level, level_info)
 
     def __repr__(self):
         occupied_tiles = []
@@ -165,7 +166,7 @@ class _TileFactory(object):
     '''
 
     def __init__(self):
-        self._tile_types = utils.load_tile_types()
+        self._tile_types = utils.RES_MANAGER.get('tile_types')
 
     def create_tile(self, tile_type, pos):
         '''Returns tile instance with attributes for provided type.'''
@@ -198,6 +199,10 @@ class Tile(object):
 
     def __repr__(self):
         return "<%s at %s>" % (self.type, self._pos)
+
+    def distance(self, tile):
+        return abs(self.pos[0] - tile.pos[0]) \
+            + abs(self.pos[1] - tile.pos[1])
 
     @property
     def owner(self):

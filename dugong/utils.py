@@ -7,7 +7,6 @@ loading and parsing config files.
 
 import os
 import logging
-import ConfigParser as cparser
 
 import pygame
 import pygame.locals as pl
@@ -26,6 +25,41 @@ DESCR_DIR = os.path.join(GAME_DIR, 'descr')
 SCREEN_SIZE = (1280, 720)
 TILE_SIZE = 50
 SCROLL_SPEED = 3
+
+class ResourceManager(object):
+
+    def __init__(self):
+        self._loaded_resources = {}
+
+    def get(self, res_name, size=None, rotate=0):
+        res = None
+        if res_name in self._loaded_resources:
+            res = self._loaded_resources[res_name]
+        else:
+            if res_name == 'levels_info':
+                res = load_levels_info()
+            elif res_name == 'tile_types':
+                _LOGGER.debug("Loading tiles data")
+                from configs.tiletypes import TILE_TYPES
+                res = TILE_TYPES
+            elif res_name == 'unit_types':
+                _LOGGER.debug("Loading units data")
+                from configs.unittypes import UNIT_TYPES
+                res = UNIT_TYPES
+            else:
+                identifiers = res_name.split(':')
+                path = os.path.join(*identifiers)
+                res = load_image(path)
+            self._loaded_resources[res_name] = res
+
+        if size:
+            res = pytrans.scale(res, size)
+        if rotate:
+            res = pygame.transform.rotate(res, rotate)
+
+        return res
+
+RES_MANAGER = ResourceManager()
 
 def load_configs():
     _LOGGER.debug('Loading configs')
@@ -55,45 +89,12 @@ def load_levels_info():
     return levels_info
 
 
-def load_tile_types():
-    '''Return tile types dict read from config file.'''
-    _LOGGER.debug("Loading tiles data")
-    from configs.tiletypes import TILE_TYPES
-    return TILE_TYPES
-
-
-def load_unit_types(filename='unit_types'):
-    '''Return unit types dict read from config file.'''
-    _LOGGER.debug("Loading units data")
-    from configs.unittypes import UNIT_TYPES
-    return UNIT_TYPES
-
-
-def _load_config(filename, section=None):
-    '''Generic function for reading game config files.
-    If section is not specified, reads all sections.
-    '''
-    path = os.path.join(DESCR_DIR, filename)
-    config = cparser.RawConfigParser()
-    config.read(path)
-    sections = {}
-    for section in config.sections():
-        options = {}
-        for option in config.options(section):
-            options[option] = config.get(section, option)
-        sections[section] = options
-    return sections
-
-def load_image(name, colorkey=None, size=(TILE_SIZE, TILE_SIZE), rotate=0):
+def load_image(name, colorkey=None):
     '''Load image. Uses red box as fallback.'''
     fullname = os.path.join(IMAGES_DIR, name)
     # if image wasn't found, use red box as fallback
     try:
         image = pygame.image.load(fullname)
-        if size:
-            image = pytrans.scale(image, size)
-        if rotate:
-            image = pygame.transform.rotate(image, rotate)
     except pygame.error, message:
         _LOGGER.exception("Can't load image: %s", message)
         image = pygame.Surface((TILE_SIZE, TILE_SIZE))
@@ -114,162 +115,6 @@ def load_image(name, colorkey=None, size=(TILE_SIZE, TILE_SIZE), rotate=0):
             colorkey = image.get_at((0, 0))
         image.set_colorkey(colorkey, pl.RLEACCEL)
     return image
-
-
-def _create_level_image(level, level_info):
-    '''Return image of whole level built from tiles.'''
-    _LOGGER.debug("Creating level image from description")
-    season = level_info['season']
-    tile_width = tile_height = TILE_SIZE
-    map_width = len(level[0]) * tile_width
-    map_height = len(level) * tile_height
-    image = pygame.Surface((map_width, map_height))
-    # blit each tile to image
-    background = load_image(os.path.join(season,
-                                         level_info['background'], '1.png'))
-    for i, row in enumerate(level):
-        for j, tile in enumerate(row):
-            if tile:
-                tile_image = None
-                # select proper image
-                if tile.type == 'road':
-                    # select proper road part: crossroad,
-                    # straight_road
-                    tile_image = select_road_block((i, j), level, season)
-                elif tile.type == 'water':
-                    tile_image = select_water_block((i, j), level, season)
-                elif tile.type == 'bridge':
-                    tile_image = select_bridge_block((i, j), level, season)
-                else:
-                    name = '1.png'
-                    image_name = os.path.join(season, tile.type, name)
-                    tile_image = load_image(image_name)
-                # blit land image as background
-                image.blit(background, tile.coord)
-                # blit specific image for tile
-                image.blit(tile_image, tile.coord)
-    return image
-
-
-def select_road_block(coords, level, season):
-    '''Select proper road part: crossroad, straight road, turn, branch.'''
-    name = '1.png'
-    rotate = 0
-    i, j = coords
-    # border object to substitute for missing boundary cells
-    class Border(object):
-        def __init__(self):
-            self.type = 'border'
-    # 4 relevant cells
-    N = level[i - 1][j] if i > 0 else Border()
-    S = level[i + 1][j] if i < len(level) - 1 else Border()
-    W = level[i][j - 1] if j > 0 else Border()
-    E = level[i][j + 1] if j < len(level[i]) - 1 else Border()
-    R = ['road', 'bridge', 'castle', 'house', 'border']
-    if N.type in R and S.type in R and W.type in R and E.type in R:
-        name = 'crossroad.png'
-    # branch
-    elif N.type in R and W.type in R and S.type in R:
-        name = 'branch.png'
-    elif E.type in R and S.type in R and W.type in R:
-        name = 'branch.png'
-        rotate = 90
-    elif N.type in R and S.type in R and E.type in R:
-        name = 'branch.png'
-        rotate = 180
-    elif N.type in R and E.type in R and W.type in R:
-        name = 'branch.png'
-        rotate = 270
-    # straight
-    elif N.type in R and S.type in R:
-        name = 'vertical.png'
-    elif W.type in R and E.type in R:
-        name = 'horizontal.png'
-    # turn
-    elif W.type in R and N.type in R:
-        name = 'turn.png'
-    elif W.type in R and S.type in R:
-        name = 'turn.png'
-        rotate = 90
-    elif S.type in R and E.type in R:
-        name = 'turn.png'
-        rotate = 180
-    elif E.type in R and N.type in R:
-        name = 'turn.png'
-        rotate = 270
-    full_name = os.path.join(season, 'road', name)
-    return load_image(full_name, rotate=rotate)
-
-
-def select_water_block(coords, level, season):
-    name = '1.png'
-    rotate = 0
-    i, j = coords
-    # border object to substitute for missing boundary cells
-    class Border(object):
-        def __init__(self):
-            self.type = 'border'
-    # 4 relevant cells
-    N = level[i - 1][j] if i > 0 else Border()
-    S = level[i + 1][j] if i < len(level) - 1 else Border()
-    W = level[i][j - 1] if j > 0 else Border()
-    E = level[i][j + 1] if j < len(level[i]) - 1 else Border()
-    R = ['water', 'bridge', 'border']
-    if N.type in R and S.type in R and W.type in R and E.type in R:
-        name = 'open.png'
-    elif W.type in R and S.type in R and N.type in R:
-        name = 'shore.png'
-    elif W.type in R and E.type in R and S.type in R:
-        name = 'shore.png'
-        rotate = 90
-    elif S.type in R and E.type in R and N.type in R:
-        name = 'shore.png'
-        rotate = 180
-    elif W.type in R and E.type in R and N.type in R:
-        name = 'shore.png'
-        rotate = 270
-    elif W.type in R and S.type in R:
-        name = 'bay.png'
-    elif E.type in R and S.type in R:
-        name = 'bay.png'
-        rotate = 90
-    elif E.type in R and N.type in R:
-        name = 'bay.png'
-        rotate = 180
-    elif W.type in R and N.type in R:
-        name = 'bay.png'
-        rotate = 270
-    elif N.type in R and S.type in R:
-        name = 'river.png'
-    elif W.type in R and E.type in R:
-        name = 'river.png'
-        rotate = 90
-    full_name = os.path.join(season, 'water', name)
-    return load_image(full_name, rotate=rotate)
-
-
-def select_bridge_block(coords, level, season):
-    name = '1.png'
-    rotate = 0
-    i, j = coords
-    # border object to substitute for missing boundary cells
-    class Border(object):
-        def __init__(self):
-            self.type = 'border'
-    # 4 relevant cells
-    N = level[i - 1][j] if i > 0 else Border()
-    S = level[i + 1][j] if i < len(level) - 1 else Border()
-    W = level[i][j - 1] if j > 0 else Border()
-    E = level[i][j + 1] if j < len(level[i]) - 1 else Border()
-    R = ['road', 'bridge', 'border']
-    if W.type in R and E.type in R:
-        name = '1.png'
-        rotate = 0
-    elif N.type in R and S.type in R:
-        name = '1.png'
-        rotate = 90
-    full_name = os.path.join(season, 'bridge', name)
-    return load_image(full_name, rotate=rotate)
 
 
 class Writer(object):

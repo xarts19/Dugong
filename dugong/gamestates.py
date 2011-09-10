@@ -28,6 +28,7 @@ MOUSE_LEFT = 1
 
 import game
 import utils
+from utils import RES_MANAGER
 
 _LOGGER = logging.getLogger('main.gamestates')
 
@@ -90,7 +91,7 @@ class GameStateManager(object):
                 back = self.states[-2].render()
                 image.blit(back, (0, 0))
                 front = self.states[-1].render()
-                front.set_alpha(200)
+                front.set_alpha(170)
                 image.blit(front, (0, 0))
             else:
                 image = self.states[-1].render()
@@ -108,7 +109,7 @@ class _Game(object):
         self._state_manager = state_manager
         self._game = game.Game(level_info)
         self._name = level_name
-        self._background = utils.load_image('game_background.jpg',
+        self._background = RES_MANAGER.get('game_background.jpg',
                                             size=utils.SCREEN_SIZE)
         self._statusbar = StatusBar(utils.SCREEN_SIZE)
         self.screen_position = [0, 0]
@@ -195,6 +196,9 @@ class _Attack(object):
         self.is_transparent = False
         self._state_manager = state_manager
         self._image = pygame.Surface((utils.SCREEN_SIZE))
+        self._font = utils.Writer(24, (255, 0, 0))
+        skip = self._font.render("Press 's' to skip cut-scene.")
+        self._image.blit(skip, (0, 0))
 
     def cleanup(self):
         pass
@@ -227,7 +231,7 @@ class _MenuState(object):
         self.is_transparent = False
         self._state_manager = state_manager
         self._image = pygame.Surface((utils.SCREEN_SIZE))
-        self._background = utils.load_image(background,
+        self._background = RES_MANAGER.get(background,
                                             size=utils.SCREEN_SIZE)
         self._menus = []
         self._init_menu()
@@ -243,7 +247,6 @@ class _MenuState(object):
         self._menus[-1].check_selected(mouse_pos)
 
     def render(self):
-        self._image.fill((0,0,0,155))
         self._image.blit(self._background, (0, 0))
         self._menus[-1].draw(self._image)
         return self._image
@@ -254,11 +257,11 @@ class _MainMenu(_MenuState):
     def __init__(self, state_manager):
         super(_MainMenu, self).__init__(state_manager, 'main_menu.jpg')
         _LOGGER.debug("Creating main menu")
-        self._levels = utils.load_levels_info()
+        self._levels = RES_MANAGER.get('levels_info')
 
     def _init_menu(self):
         menu_items = (("Select level", self._select_menu),
-                      ("Exit game", self._exit),
+                      ("Exit game", self._back),
                       )
         self._menus.append(_Menu(menu_items))
 
@@ -269,6 +272,9 @@ class _MainMenu(_MenuState):
             elif event.type == pl.MOUSEBUTTONUP:
                 if event.button == MOUSE_LEFT:
                     self._menus[-1].execute()
+            elif event.type == pl.KEYDOWN:
+                if event.key == pl.K_ESCAPE:
+                    self._back()
 
     def _select_menu(self):
         menu_items = []
@@ -283,11 +289,11 @@ class _MainMenu(_MenuState):
         self._state_manager.push_state(_Game(self._state_manager, name, info))
         self._menus.pop()
 
-    def _exit(self):
-        self._state_manager.exit()
-
     def _back(self):
-        self._menus.pop()
+        if len(self._menus) > 1:
+            self._menus.pop()
+        else:
+            self._state_manager.exit()
 
 
 class _InGameMenu(_MenuState):
@@ -401,7 +407,7 @@ class StatusBar(object):
     def __init__(self, scr_size, w=700, h=70):
         self.fontsize = 20
         self.font = utils.Writer(self.fontsize - 4, (255, 0, 0))
-        self.background = utils.load_image('status.png', size=(w, h))
+        self.background = RES_MANAGER.get('status.png', size=(w, h))
         self.image = pygame.Surface((w, h))
         self.pos = (scr_size[0] - w) / 2, (scr_size[1] - h)
         self.size = w, h

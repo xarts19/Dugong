@@ -28,7 +28,7 @@ LEVELS = {
                 ('earthgolem', 7, 1),
             ),
         ],
-        'season': 'monochrome',
+        'season': 'summer',
         'background': 'land',
     },
 

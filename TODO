@@ -7,7 +7,6 @@ TODO:
  - win condition
  - unit buying
  - money income
- - draw attack radius just like walking radius
  - add hint that 's' skips attack video
  - make unit grey if it can't do anything
 
@@ -35,4 +34,4 @@ LONG-TERM:
 
 
 DONE (by date):
-
+ - draw attack radius just like walking radius

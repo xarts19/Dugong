@@ -27,7 +27,7 @@ class UnitFactory(object):
     '''
 
     def __init__(self):
-        self._unit_types = utils.load_unit_types()
+        self._unit_types = utils.RES_MANAGER.get('unit_types')
 
     def create_unit(self, unit_type, tile, owner=None):
         '''Returns tile instance with attributes for provided type.'''
@@ -41,11 +41,11 @@ class UnitFactory(object):
         # init info from type
         type_info = unit_types[unit_type]
 
-        image = utils.load_image(unit_type + '.png')
-        if 'animation' in type_info:
-            images = map(load_image, options['animation'].split(','))
-        else:
-            images = [image]
+        image = utils.RES_MANAGER.get(unit_type + '.png')
+        #if 'animation' in type_info:
+        #    images = map(load_image, options['animation'].split(','))
+        #else:
+        images = [image]
         unit_class = getattr(sys.modules[__name__], unit_type.capitalize(), Unit)
         unit = unit_class(unit_type, type_info, image, images, tile, owner)
         return unit
@@ -75,17 +75,14 @@ class Unit(pygame.sprite.Sprite):
         return "<%s at %s>" % (self._type, self._tile)
 
     def can_attack(self, unit):
-        i, j = self.tile.pos
-        i_2, j_2 = unit.tile.pos
-        in_range = abs(i - i_2) + abs(j - j_2) <= self._range
+        in_range = self.tile.distance(unit.tile) <= self._range
         has_attacks = self._attacks > 0
         is_enemy = unit.owner is not self.owner
         return in_range and has_attacks and is_enemy
 
     def riposte(self, unit):
         '''Returns damage done or None if can't attack.'''
-        if abs(self.tile.pos[0] - unit.tile.pos[0]) \
-                + abs(self.tile.pos[1] - unit.tile.pos[1]) > 1:
+        if self.tile.distance(unit.tile) > 1:
             return None
         return self.attack(unit, riposte=True)
 
@@ -157,9 +154,7 @@ class Catapult(Unit):
         super(Catapult, self).__init__(*args)
 
     def can_attack(self, unit):
-        i, j = self.tile.pos
-        i_2, j_2 = unit.tile.pos
-        return super(Catapult, self).can_attack(unit) and abs(i - i_2) + abs(j - j_2) > 1
+        return super(Catapult, self).can_attack(unit) and self.tile.distance(unit.tile) > 1
 
 
 class AnimatedImage(object):
