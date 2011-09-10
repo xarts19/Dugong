@@ -24,6 +24,8 @@ TODO:
         after player does something, server returns new possible actions (if any)
         along with response on what to do about current action)
 
+ - add resource manager for images
+
 LONG-TERM:
 
  - effects (gradient, PAd, PyIgnition)

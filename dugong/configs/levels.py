@@ -62,6 +62,23 @@ LEVELS = {
                     lllllwwlll''',
         'units': [
         ],
+        'season': 'summer',
+        'background': 'land',
+    },
+
+    'monochrome_test': {
+        'map':   '''lwwwwwwwwl
+                    lwwwwwwwwl
+                    rrrrwwllrr
+                    lrlrlwllrl
+                    lrrrrbrrrl
+                    lrlrrbrlrl
+                    wbwbwwllcl
+                    lrlrlwwlll
+                    lrrrrbbrrr
+                    llhllwwlll''',
+        'units': [
+        ],
         'season': 'monochrome',
         'background': 'land',
     },
