@@ -35,7 +35,7 @@ _LOGGER = logging.getLogger('main.gamestates')
 class GameStateManager(object):
 
     def __init__(self):
-        self.states = [_MainMenu(self)]
+        self.states = [_MainMenuState(self)]
         self._transition_info = (1, False, 0, None, self.states[-1].render())
         self._continue_game = True
 
@@ -100,7 +100,7 @@ class GameStateManager(object):
         return image
 
 
-class _Game(object):
+class _GameState(object):
 
     def __init__(self, state_manager, level_name, level_info):
         _LOGGER.debug("Creating game")
@@ -108,6 +108,7 @@ class _Game(object):
         self.is_transparent = False
         self._state_manager = state_manager
         self._game = game.Game(level_info)
+        self._game_renderer = game.GameRenderer(self._game)
         self._name = level_name
         self._background = RES_MANAGER.get('game_background.jpg',
                                             size=utils.SCREEN_SIZE)
@@ -133,7 +134,7 @@ class _Game(object):
                         res = self._game.click_event(self._to_map_coords(pygame.mouse.get_pos()))
                         if res:
                             if res[0] == 'attack':
-                                self._state_manager.push_state(_Attack(self._state_manager, *res[1]))
+                                self._state_manager.push_state(_AttackState(self._state_manager, *res[1]))
             elif event.type == pl.KEYDOWN:
                 if event.key == pl.K_ESCAPE:
                     if not self._game.cancel_event():
@@ -147,34 +148,34 @@ class _Game(object):
 
     def render(self):
         # draw screen
-        self._background.blit(self._game.render_image(),
+        self._background.blit(self._game_renderer.render(),
                               self._from_map_coords((0, 0)))
         self._background.blit(self._statusbar.get_image(),
                               self._statusbar.get_pos())
         return self._background
 
     def _pause(self):
-        self._state_manager.push_state(_InGameMenu(self._state_manager))
+        self._state_manager.push_state(_InGameMenuState(self._state_manager))
 
     def move_view(self, mouse):
         if 5 < mouse[0] < 75 and self._to_map_coords((0, 0))[0] > 0:
             self.screen_position[0] += utils.SCROLL_SPEED
 
         elif utils.SCREEN_SIZE[0] - 75 < mouse[0] < utils.SCREEN_SIZE[0] - 5 \
-                and self._from_map_coords(self._game.get_map_size())[0] > utils.SCREEN_SIZE[0]:
+                and self._from_map_coords(self._game_renderer.get_size())[0] > utils.SCREEN_SIZE[0]:
             self.screen_position[0] -= utils.SCROLL_SPEED
 
         if 5 < mouse[1] < 75 and self._to_map_coords((0, 0))[1] > 0:
             self.screen_position[1] += utils.SCROLL_SPEED
 
         elif utils.SCREEN_SIZE[1] - 75 < mouse[1] < utils.SCREEN_SIZE[1] - 5 \
-                and self._from_map_coords(self._game.get_map_size())[1] > utils.SCREEN_SIZE[1]:
+                and self._from_map_coords(self._game_renderer.get_size())[1] > utils.SCREEN_SIZE[1]:
             self.screen_position[1] -= utils.SCROLL_SPEED
 
     def _get_shift(self):
         # calculate map shift from the edge of the screen
         size = utils.SCREEN_SIZE
-        w, h = self._game.get_map_size()
+        w, h = self._game_renderer.get_size()
         view = self.screen_position
         shift = (size[0] - w) / 2 + view[0], (size[1] - h) / 2 + view[1]
         return shift
@@ -190,7 +191,7 @@ class _Game(object):
         return pos[0] + shift[0], pos[1] + shift[1]
 
 
-class _Attack(object):
+class _AttackState(object):
 
     def __init__(self, state_manager, attacker, attacked, damage_to_attacker, damage_to_attacked):
         self.is_transparent = False
@@ -222,7 +223,7 @@ class _Attack(object):
         return self._image
 
     def pause(self):
-        self._state_manager.push_state(_InGameMenu(self._state_manager, cutscene=True))
+        self._state_manager.push_state(_InGameMenuState(self._state_manager, cutscene=True))
 
 
 class _MenuState(object):
@@ -252,10 +253,10 @@ class _MenuState(object):
         return self._image
 
 
-class _MainMenu(_MenuState):
+class _MainMenuState(_MenuState):
 
     def __init__(self, state_manager):
-        super(_MainMenu, self).__init__(state_manager, 'main_menu.jpg')
+        super(_MainMenuState, self).__init__(state_manager, 'main_menu.jpg')
         _LOGGER.debug("Creating main menu")
         self._levels = RES_MANAGER.get('levels_info')
 
@@ -268,7 +269,7 @@ class _MainMenu(_MenuState):
     def handle_events(self, events):
         for event in events:
             if event.type == pl.QUIT:
-                self._exit()
+                self._back()
             elif event.type == pl.MOUSEBUTTONUP:
                 if event.button == MOUSE_LEFT:
                     self._menus[-1].execute()
@@ -286,7 +287,7 @@ class _MainMenu(_MenuState):
         self._menus.append(_Menu(menu_items))
 
     def _load_level(self, name, info):
-        self._state_manager.push_state(_Game(self._state_manager, name, info))
+        self._state_manager.push_state(_GameState(self._state_manager, name, info))
         self._menus.pop()
 
     def _back(self):
@@ -296,11 +297,11 @@ class _MainMenu(_MenuState):
             self._state_manager.exit()
 
 
-class _InGameMenu(_MenuState):
+class _InGameMenuState(_MenuState):
 
     def __init__(self, state_manager, cutscene=False):
         self._cutscene = cutscene
-        super(_InGameMenu, self).__init__(state_manager, 'in_game_menu.jpg')
+        super(_InGameMenuState, self).__init__(state_manager, 'in_game_menu.jpg')
         _LOGGER.debug("Creating in game menu")
         self.is_transparent = True
 

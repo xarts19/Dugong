@@ -7,8 +7,8 @@ TODO:
  - win condition
  - unit buying
  - money income
- - add hint that 's' skips attack video
  - make unit grey if it can't do anything
+ - improve water tile-matching algs (e. g. for river curves)
 
  - separate game logic, moke it ready to implement on a server side 
     (also graphics handling needs to be separated: game reads player input,
@@ -23,7 +23,11 @@ TODO:
         after player does something, server returns new possible actions (if any)
         along with response on what to do about current action)
 
- - add resource manager for images
+ - separate rendering logic from game logic to simplify classes (that they can be
+    run on the server for example)
+    -- unit rendering left
+ - abstract pixel resolutions from game logic and take it away to input handler
+
 
 LONG-TERM:
 
@@ -35,3 +39,5 @@ LONG-TERM:
 
 DONE (by date):
  - draw attack radius just like walking radius
+ - add resource manager for images
+ - add hint that 's' skips attack video

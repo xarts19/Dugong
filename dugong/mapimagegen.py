@@ -54,45 +54,41 @@ def select_road_block(coords, level, season):
     name = 'default.png'
     rotate = 0
     i, j = coords
-    # border object to substitute for missing boundary cells
-    class Border(object):
-        def __init__(self):
-            self.type = 'border'
     # 4 relevant cells
-    N = level[i - 1][j] if i > 0 else Border()
-    S = level[i + 1][j] if i < len(level) - 1 else Border()
-    W = level[i][j - 1] if j > 0 else Border()
-    E = level[i][j + 1] if j < len(level[i]) - 1 else Border()
+    N = level[i - 1][j].type if i > 0 else 'border'
+    S = level[i + 1][j].type if i < len(level) - 1 else 'border'
+    W = level[i][j - 1].type if j > 0 else 'border'
+    E = level[i][j + 1].type if j < len(level[i]) - 1 else 'border'
     R = ['road', 'bridge', 'castle', 'house', 'border']
-    if N.type in R and S.type in R and W.type in R and E.type in R:
+    if sides_match([N, S, W, E], [], R):
         name = 'crossroad.png'
     # branch
-    elif N.type in R and W.type in R and S.type in R:
+    elif sides_match([N, S, W], [E], R):
         name = 'branch.png'
-    elif E.type in R and S.type in R and W.type in R:
+    elif sides_match([E, S, W], [N], R):
         name = 'branch.png'
         rotate = 90
-    elif N.type in R and S.type in R and E.type in R:
+    elif sides_match([N, S, E], [W], R):
         name = 'branch.png'
         rotate = 180
-    elif N.type in R and E.type in R and W.type in R:
+    elif sides_match([N, E, W], [S], R):
         name = 'branch.png'
         rotate = 270
     # straight
-    elif N.type in R and S.type in R:
+    elif sides_match([N, S], [W, E], R):
         name = 'vertical.png'
-    elif W.type in R and E.type in R:
+    elif sides_match([W, E], [N, S], R):
         name = 'horizontal.png'
     # turn
-    elif W.type in R and N.type in R:
+    elif sides_match([W, N], [E, S], R):
         name = 'turn.png'
-    elif W.type in R and S.type in R:
+    elif sides_match([W, S], [E, N], R):
         name = 'turn.png'
         rotate = 90
-    elif S.type in R and E.type in R:
+    elif sides_match([S, E], [N, W], R):
         name = 'turn.png'
         rotate = 180
-    elif E.type in R and N.type in R:
+    elif sides_match([E, N], [W, S], R):
         name = 'turn.png'
         rotate = 270
     full_name = ':'.join([season, 'road', name])
@@ -103,43 +99,39 @@ def select_water_block(coords, level, season):
     name = 'default.png'
     rotate = 0
     i, j = coords
-    # border object to substitute for missing boundary cells
-    class Border(object):
-        def __init__(self):
-            self.type = 'border'
     # 4 relevant cells
-    N = level[i - 1][j] if i > 0 else Border()
-    S = level[i + 1][j] if i < len(level) - 1 else Border()
-    W = level[i][j - 1] if j > 0 else Border()
-    E = level[i][j + 1] if j < len(level[i]) - 1 else Border()
+    N = level[i - 1][j].type if i > 0 else 'border'
+    S = level[i + 1][j].type if i < len(level) - 1 else 'border'
+    W = level[i][j - 1].type if j > 0 else 'border'
+    E = level[i][j + 1].type if j < len(level[i]) - 1 else 'border'
     R = ['water', 'bridge', 'border']
-    if N.type in R and S.type in R and W.type in R and E.type in R:
+    if sides_match([N, S, W, E], [], R):
         name = 'open.png'
-    elif W.type in R and S.type in R and N.type in R:
+    elif sides_match([N, S, W], [E], R):
         name = 'shore.png'
-    elif W.type in R and E.type in R and S.type in R:
+    elif sides_match([S, W, E], [N], R):
         name = 'shore.png'
         rotate = 90
-    elif S.type in R and E.type in R and N.type in R:
+    elif sides_match([N, S, E], [W], R):
         name = 'shore.png'
         rotate = 180
-    elif W.type in R and E.type in R and N.type in R:
+    elif sides_match([N, W, E], [S], R):
         name = 'shore.png'
         rotate = 270
-    elif W.type in R and S.type in R:
+    elif sides_match([S, W], [N, E], R):
         name = 'bay.png'
-    elif E.type in R and S.type in R:
+    elif sides_match([S, E], [W, N], R):
         name = 'bay.png'
         rotate = 90
-    elif E.type in R and N.type in R:
+    elif sides_match([N, E], [W, S], R):
         name = 'bay.png'
         rotate = 180
-    elif W.type in R and N.type in R:
+    elif sides_match([N, W], [S, E], R):
         name = 'bay.png'
         rotate = 270
-    elif N.type in R and S.type in R:
+    elif sides_match([N, S], [E, W], R):
         name = 'river.png'
-    elif W.type in R and E.type in R:
+    elif sides_match([W, E], [N, S], R):
         name = 'river.png'
         rotate = 90
     full_name = ':'.join([season, 'water', name])
@@ -150,22 +142,23 @@ def select_bridge_block(coords, level, season):
     name = 'default.png'
     rotate = 0
     i, j = coords
-    # border object to substitute for missing boundary cells
-    class Border(object):
-        def __init__(self):
-            self.type = 'border'
     # 4 relevant cells
-    N = level[i - 1][j] if i > 0 else Border()
-    S = level[i + 1][j] if i < len(level) - 1 else Border()
-    W = level[i][j - 1] if j > 0 else Border()
-    E = level[i][j + 1] if j < len(level[i]) - 1 else Border()
+    N = level[i - 1][j].type if i > 0 else 'border'
+    S = level[i + 1][j].type if i < len(level) - 1 else 'border'
+    W = level[i][j - 1].type if j > 0 else 'border'
+    E = level[i][j + 1].type if j < len(level[i]) - 1 else 'border'
     R = ['road', 'bridge', 'border']
-    if W.type in R and E.type in R:
+    if sides_match([W, E], [N, S], R):
         name = 'default.png'
         rotate = 0
-    elif N.type in R and S.type in R:
+    elif sides_match([N, S], [W, E], R):
         name = 'default.png'
         rotate = 90
     full_name = ':'.join([season, 'bridge', name])
     return RES_MANAGER.get(full_name, rotate=rotate)
+
+def sides_match(matched, unmatched, match_list):
+    matched_corresponds = all([t in match_list for t in matched])
+    unmatched_corresponds = not any([t in match_list for t in unmatched])
+    return unmatched_corresponds and matched_corresponds
 

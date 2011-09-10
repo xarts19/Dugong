@@ -9,7 +9,6 @@ import logging
 import pygame
 
 import utils
-import mapimagegen
 
 __author__ = "Xarts19 (xarts19@gmail.com)"
 __version__ = "Version: 0.0.1 "
@@ -23,7 +22,10 @@ class GameMap(object):
     def __init__(self, level_info):
         tile_factory = _TileFactory()
         self._level = _init_level(level_info['map'], tile_factory)
-        self._image = mapimagegen.create_level_image(self._level, level_info)
+        self._level_info = level_info
+
+    def get_info(self):
+        return self._level, self._level_info
 
     def __repr__(self):
         occupied_tiles = []
@@ -32,11 +34,6 @@ class GameMap(object):
                 if tile.unit:
                     occupied_tiles.append(repr(tile))
         return '\n'.join(occupied_tiles)
-
-    @property
-    def image(self):
-        '''Return complete map image'''
-        return self._image
 
     def tile_at_coord(self, x, y):
         '''Return tile object at pixel coords.'''
@@ -101,7 +98,7 @@ class GameMap(object):
         unit = orig.unit
         moves = unit.moves_left
         fringe = [Path(orig)]
-        final_path = Path(orig)
+        final_path = Path()
         while fringe:
             path = fringe[0]
             del fringe[0]
@@ -121,14 +118,15 @@ class GameMap(object):
 
 class Path(object):
 
-    def __init__(self, tile, path=None, cost=None):
+    def __init__(self, tile=None, path=None, cost=None):
         if path:
             self.tiles = path.tiles[:]
             self.cost = path.cost + cost
         else:
             self.tiles = []
             self.cost = 0
-        self.tiles.append(tile)
+        if tile:
+            self.tiles.append(tile)
 
     def pixels(self):
         '''List of coords of pixels of each tile in path.'''

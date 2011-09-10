@@ -70,6 +70,7 @@ class Unit(pygame.sprite.Sprite):
         self.health = 100
         self.attack_damage = type_info['attack']
         self.defence = type_info['defence']
+        _LOGGER.debug("Unit created: %s", self)
 
     def __repr__(self):
         return "<%s at %s>" % (self._type, self._tile)
@@ -135,6 +136,7 @@ class Unit(pygame.sprite.Sprite):
         self._image.update(game_ticks)
         self._image.health = self.health
         self.rect = self._image.get_rect()
+        return self.is_alive()
 
     def move(self, path):
         self.moves_left -= path.cost

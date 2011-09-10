@@ -18,15 +18,21 @@ LOGGER = logging.getLogger('main')
 LOGGER_FORMAT = "%(name)s--%(levelname)s--%(asctime)s - %(message)s"
 LOGGER_DATE_FORMAT = "%d-%m-%y %H:%M:%S"
 
-def init_logging(debug_level):
+def init_logging(log_level):
     '''Initialize logging system.'''
-    LOGGER.setLevel(debug_level)
+    LOGGER.setLevel(log_level)
     LOGGER.propagate = 0
-    streamLogger = logging.StreamHandler()
-    streamLogger.setLevel(debug_level)
     formatter = logging.Formatter(LOGGER_FORMAT, LOGGER_DATE_FORMAT)
+
+    streamLogger = colorer.ColoredStreamHandler()
+    streamLogger.setLevel(log_level)
     streamLogger.setFormatter(formatter)
     LOGGER.addHandler(streamLogger)
+
+    fileLogger = logging.FileHandler('.log')
+    fileLogger.setLevel(logging.DEBUG)
+    fileLogger.setFormatter(formatter)
+    LOGGER.addHandler(fileLogger)
 
 
 def parse_args():
@@ -39,10 +45,10 @@ def parse_args():
                         const=logging.INFO, help='show additional information')
     opts = parser.parse_args()[0]
 
-    debug_level = logging.WARNING
+    log_level = logging.WARNING
     if opts.debug:
-        debug_level = opts.debug
-    init_logging(debug_level)
+        log_level = opts.debug
+    init_logging(log_level)
 
     LOGGER.debug('cli options: %s', opts)
 
@@ -63,4 +69,4 @@ def main():
         return 1
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

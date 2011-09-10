@@ -5,14 +5,16 @@ All game logic and constraints is here.
 """
 
 import logging
-
 import random
-import gamemap
-import units
-import utils
 
 import pygame
 import pygame.locals as pl
+
+import gamemap
+import units
+import utils
+import mapimagegen
+
 
 __author__ = "Xarts19 (xarts19@gmail.com)"
 __version__ = "Version: 0.0.1 "
@@ -26,21 +28,20 @@ class Game(object):
     def __init__(self, level_info):
         _LOGGER.debug('Initializing game map')
         self._unit_factory = units.UnitFactory()
-        self._players = Players([])
+        self.players = Players([])
         # create map
-        self._map = gamemap.GameMap(level_info)
-        self._selection = Selection(self._map, self._players)
-        self._image = pygame.Surface(self.get_map_size())
+        self.map = gamemap.GameMap(level_info)
+        self.selection = Selection(self.map, self.players)
         # load units
         for i, units_info in enumerate(level_info['units']):
             player = Player(str(i))
-            self._players.add(player)
+            self.players.add(player)
             self._init_units(units_info, player)
 
     def _init_units(self, units, player):
         '''Create units from level specs for given player.'''
         for unit_type, i, j in units:
-            self._add_unit(unit_type, player, self._map.tile_at_pos(i, j))
+            self._add_unit(unit_type, player, self.map.tile_at_pos(i, j))
 
     def _add_unit(self, unit_type, player, tile):
         '''Add unit to tile, _units and player'''
@@ -50,42 +51,32 @@ class Game(object):
             tile.owner = player
             player.add(unit)
 
-    def get_map_size(self):
-        return self._map.image.get_size()
-
     def update(self, game_ticks):
         '''Update all sprites.'''
-        self._players.update(game_ticks)
-
-    def render_image(self):
-        '''Blit everything together in the right order.'''
-        # draw map
-        self._image.blit(self._map.image, (0, 0))
-        # draw units
-        self._players.draw(self._image)
-        # draw cursors
-        self._selection.draw(self._image)
-        return self._image
+        self.players.update(game_ticks)
+        self.selection.update()
 
     def _attack(self, attacker, attacked):
         '''Compute attack result'''
         damage_to_attacked = attacker.attack(attacked)
         if attacked.is_alive():
             damage_to_attacker = attacked.riposte(attacker)
+        else:
+            damage_to_attacker = None
         # show cut scene
         self._attack_params = attacker, attacked, damage_to_attacker, damage_to_attacked
         return self._attack_params
 
     def end_turn(self):
-        for unit in self._players.current:
+        for unit in self.players.current:
             unit.end_turn()
-        self._players.next()
-        self._selection.unselect()
+        self.players.next()
+        self.selection.unselect()
 
     def cancel_event(self):
         '''Return True if smth was canceled'''
-        if self._selection.selected_tile:
-            self._selection.unselect()
+        if self.selection.selected_tile:
+            self.selection.unselect()
             return True
         else:
             return False
@@ -94,23 +85,23 @@ class Game(object):
         '''Deside what to do on mouse click on particular tile.'''
         self.mouseover_event(pos)
         # try to select unit
-        if self._selection.can_select():
-            self._selection.select()
+        if self.selection.can_select():
+            self.selection.select()
         # try to move if reachable
-        elif self._selection.can_move():
-            self._selection.move()
-            self._selection.unselect()
+        elif self.selection.can_move():
+            self.selection.move()
+            self.selection.unselect()
         # try to attack if has enemy unit
-        elif self._selection.can_attack():
-            res = self._attack(self._selection.selected_tile.unit,
-                               self._selection.pointed_tile.unit)
-            self._selection.unselect()
+        elif self.selection.can_attack():
+            res = self._attack(self.selection.selected_tile.unit,
+                               self.selection.pointed_tile.unit)
+            self.selection.unselect()
             return 'attack', res
         return None
 
     def mouseover_event(self, pos):
         '''Highlight tile with the mouse.'''
-        return self._selection.highlight(pos)
+        return self.selection.highlight(pos)
 
 
 class Players(object):
@@ -169,38 +160,50 @@ class Player(pygame.sprite.RenderUpdates):
 
     def update(self, *args):
         for unit in self:
-            if unit.is_alive():
-                unit.update(*args)
-            else:
+            is_alive = unit.update(*args)
+            if not is_alive:
                 unit.kill()
                 self.remove(unit)
 
 
 class Selection():
-    """Object responsible for selection of tiles."""
+    """Object responsible for selection of tiles.
+    Selection statuses: select, move, target, nothing
+    """
 
     def __init__(self, _map, players):
         self._map = _map
         self._players = players
-        self._green_image = utils.load_image('selection_green_bold.png')
-        self._orange_image = utils.load_image('selection_orange_bold.png')
-        self._red_image = utils.load_image('selection_red_bold.png')
-        self._target_image = utils.load_image('target.png')
-        self._reachable_image = utils.load_image('reachable.png')
-        self._reachable_image.set_alpha(100)
-        self._attackable_image = utils.load_image('attackable.png')
-        self._attackable_image.set_alpha(100)
+
         self.pointed_tile = None
+        self.status = 'nothing'
         self.selected_tile = None
-        self._reachable = None
-        self._attackable = None
-        self._path = None
+        self.reachable = None
+        self.attackable = None
+        self.path = None
+
+    def update(self):
+        if self.pointed_tile:
+            # pointing to selectable tile
+            if self.can_select():
+                self.status = 'select'
+            # pointing to enemy unit
+            elif self.can_attack():
+                self.status = 'targer'
+            # pointing to reachable tile
+            elif self.can_move():
+                self.status = 'move'
+            # pointing to unreachable tile
+            elif not self.can_move():
+                self.status = 'nothing'
 
     def highlight(self, pos):
         '''Determine tile where mouse points.'''
         new_tile = self._map.tile_at_coord(*pos)
         if new_tile and new_tile != self.pointed_tile:
             self.pointed_tile = new_tile
+            if self.selected_tile:
+                self._find_path()
         return self.gather_status_info()
 
     def can_select(self):
@@ -214,12 +217,12 @@ class Selection():
             and self.selected_tile.unit.can_attack(self.pointed_tile.unit)
 
     def can_move(self):
-        return self.selected_tile and self.reachable(self.pointed_tile)
+        return self.selected_tile and self._is_reachable(self.pointed_tile)
 
-    def reachable(self, tile):
+    def _is_reachable(self, tile):
         '''Unit can get to that tile in one turn.'''
-        if self._reachable:
-            return tile in self._reachable
+        if self.reachable:
+            return tile in self.reachable
         else:
             return False
 
@@ -227,51 +230,20 @@ class Selection():
         '''Immediately view reachable tiles for selected unit.'''
         # self._cycle_selection() between castle and unit if
         # selectiong same tile
-        self._reachable = self._map.get_reachable(self.pointed_tile)
-        self._attackable = self._map.get_attackable(self.pointed_tile)
+        self.reachable = self._map.get_reachable(self.pointed_tile)
+        self.attackable = self._map.get_attackable(self.pointed_tile)
         self.selected_tile = self.pointed_tile
 
     def _find_path(self):
         orig = self.selected_tile
         dest = self.pointed_tile
-        self._path = self._map.find_path(orig, dest)
+        self.path = self._map.find_path(orig, dest)
 
     def move(self):
-        self.selected_tile.unit.move(self._path)
+        self.selected_tile.unit.move(self.path)
 
     def unselect(self):
         self.selected_tile = None
-
-    def draw(self, image):
-        if self.pointed_tile:
-            if self.can_select():
-                image.blit(self._green_image, self.pointed_tile.coord)
-            # pointing to enemy unit
-            elif self.can_attack():
-                image.blit(self._target_image, self.pointed_tile.coord)
-            # pointing to reachable tile
-            elif self.can_move():
-                image.blit(self._green_image, self.pointed_tile.coord)
-                self._draw_path(image)
-            # pointing to unreachable tile
-            elif not self.can_move():
-                image.blit(self._red_image, self.pointed_tile.coord)
-        if self.selected_tile:
-            image.blit(self._orange_image, self.selected_tile.coord)
-            for tile in self._reachable:
-                image.blit(self._reachable_image, tile.coord)
-            for tile in self._attackable:
-                image.blit(self._attackable_image, tile.coord)
-
-    def _draw_path(self, image):
-        '''Draw dots on the map for current path.'''
-        self._find_path()
-        if self._path.size() < 2:
-            _LOGGER.exception("Failed to find path.")
-            return
-        points = self._path.pixels()
-        color = (255, 0, 0)
-        pygame.draw.lines(image, color, False, points, 3)
 
     def gather_status_info(self):
         info = {}
@@ -284,3 +256,72 @@ class Selection():
             info['tile'] = None
         return info
 
+
+class GameRenderer(object):
+
+    def __init__(self, game_instance):
+        self.game = game_instance
+        level, level_info = self.game.map.get_info()
+        self.map_image = mapimagegen.create_level_image(level, level_info)
+        self.image = pygame.Surface(self.map_image.get_size())
+
+        self._green_image = utils.RES_MANAGER.get('selection_green_bold.png')
+        self._orange_image = utils.RES_MANAGER.get('selection_orange_bold.png')
+        self._red_image = utils.RES_MANAGER.get('selection_red_bold.png')
+        self._target_image = utils.RES_MANAGER.get('target.png')
+        self._reachable_image = utils.RES_MANAGER.get('reachable.png')
+        self._reachable_image.set_alpha(100)
+        self._attackable_image = utils.RES_MANAGER.get('attackable.png')
+        self._attackable_image.set_alpha(100)
+
+    def get_size(self):
+        return self.image.get_size()
+
+    def render(self):
+        '''Blit everything together in the right order.'''
+        # draw map
+        self.image.blit(self.map_image, (0, 0))
+        # draw units
+        self.game.players.draw(self.image)
+        # draw cursors
+        self.draw_selection(self.image)
+        return self.image
+
+    def draw_selection(self, image):
+        sel = self.game.selection
+        p_t = sel.pointed_tile
+        s_t = sel.selected_tile
+        if p_t:
+            p_t_c = self.to_pixel_coord(p_t.pos)
+            if sel.status == 'nothing':
+                image.blit(self._red_image, p_t_c)
+            elif sel.status == 'target':
+                image.blit(self._target_image, p_t_c)
+            elif sel.status == 'select':
+                image.blit(self._green_image, p_t_c)
+            elif sel.status == 'move':
+                image.blit(self._green_image, p_t_c)
+                self.draw_path(image)
+        if s_t:
+            s_t_c = self.to_pixel_coord(s_t.pos)
+            image.blit(self._orange_image, s_t_c)
+            for tile in sel.reachable:
+                c = self.to_pixel_coord(tile.pos)
+                image.blit(self._reachable_image, c)
+            for tile in sel.attackable:
+                c = self.to_pixel_coord(tile.pos)
+                image.blit(self._attackable_image, c)
+
+    def draw_path(self, image):
+        '''Draw dots on the map for current path.'''
+        path = self.game.selection.path
+        if path.size() < 2:
+            return
+        points = path.pixels()
+        color = (255, 0, 0)
+        pygame.draw.lines(image, color, False, points, 3)
+
+    def to_pixel_coord(self, map_coord):
+        y = map_coord[0] * utils.TILE_SIZE
+        x = map_coord[1] * utils.TILE_SIZE
+        return (x, y)
