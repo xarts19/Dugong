@@ -25,6 +25,7 @@ DESCR_DIR = os.path.join(GAME_DIR, 'descr')
 SCREEN_SIZE = (1280, 720)
 TILE_SIZE = 50
 SCROLL_SPEED = 3
+FPS = 60
 
 class ResourceManager(object):
 
@@ -67,9 +68,14 @@ def load_configs():
     global SCREEN_SIZE
     global TILE_SIZE
     global SCROLL_SPEED
-    SCREEN_SIZE = config.graphics['screen_mode']
-    TILE_SIZE = config.graphics['tile_size']
-    SCROLL_SPEED = config.graphics['scroll_speed']
+    global FPS
+    try:
+        SCREEN_SIZE = config.graphics['screen_mode']
+        TILE_SIZE = config.graphics['tile_size']
+        SCROLL_SPEED = config.graphics['scroll_speed']
+        FPS = config.graphics['fps']
+    except KeyError:
+        _LOGGER.exception("Config file is broken.")
 
 
 def load_levels_info():

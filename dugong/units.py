@@ -41,27 +41,21 @@ class UnitFactory(object):
         # init info from type
         type_info = unit_types[unit_type]
 
-        image = utils.RES_MANAGER.get(unit_type + '.png')
-        #if 'animation' in type_info:
-        #    images = map(load_image, options['animation'].split(','))
-        #else:
-        images = [image]
+        renderer_class = getattr(sys.modules[__name__], unit_type.capitalize() + 'Renderer', UnitRenderer)
         unit_class = getattr(sys.modules[__name__], unit_type.capitalize(), Unit)
-        unit = unit_class(unit_type, type_info, image, images, tile, owner)
+        unit = unit_class(unit_type, type_info, renderer_class, tile, owner)
         return unit
 
 
 class Unit(pygame.sprite.Sprite):
 
-    def __init__(self, unit_type, type_info, image, images, tile, owner):
+    def __init__(self, unit_type, type_info, renderer_class, tile, owner):
         super(Unit, self).__init__()
-        self._type = unit_type
+        self.type = unit_type
         self.owner = owner
-        self._tile = tile
+        self.tile = tile
         self._set_tile_owner()
-        self._image = AnimatedImage(static=image, animated=images,
-                                          coord=tile.coord)
-        self.rect = self._image.get_rect()
+        self.renderer = renderer_class(self)
         self.moves_left = type_info['max_moves']
         self.max_moves = type_info['max_moves']
         self._max_attacks = 1
@@ -110,18 +104,6 @@ class Unit(pygame.sprite.Sprite):
         self.moves_left = self.max_moves
         self._attacks = self._max_attacks
 
-    @property
-    def image(self):
-        return self._image()
-
-    @property
-    def tile(self):
-        return self._tile
-
-    @tile.setter
-    def tile(self, value):
-        self._tile = value
-
     def get_pass_cost(self, tile):
         if tile.type == 'water' or tile.unit:
             return 100
@@ -129,19 +111,17 @@ class Unit(pygame.sprite.Sprite):
             return tile.pass_cost
 
     def _set_tile_owner(self):
-        self._tile.owner = self.owner
+        self.tile.owner = self.owner
 
     def update(self, game_ticks):
         '''Redirect call to animated image.'''
-        self._image.update(game_ticks)
-        self._image.health = self.health
-        self.rect = self._image.get_rect()
+        self.renderer.update(game_ticks)
         return self.is_alive()
 
     def move(self, path):
         self.moves_left -= path.cost
         dest = path.end()
-        self._image.start_animation(path)
+        self.renderer.move(path)
         # remove unit from old tile
         self.tile.unit = None
         # assign new tile to unit
@@ -159,60 +139,91 @@ class Catapult(Unit):
         return super(Catapult, self).can_attack(unit) and self.tile.distance(unit.tile) > 1
 
 
+class UnitRenderer(object):
+
+    def __init__(self, unit):
+        self.unit = unit
+        self._orig = StaticImage(utils.RES_MANAGER.get(unit.type + '.png'), unit.tile.pos)
+        self.image = self._orig
+        self.font = utils.Writer(10, (255, 0, 0))
+
+    def update(self, ticks):
+        if isinstance(self.image, StaticImage):
+            return
+        elif isinstance(self.image, AnimatedImage) and self.image.animated:
+            self.image.update(ticks)
+        else:
+            self.image = self._orig
+
+    def render(self, image, to_pixels_fnc):
+        pos = to_pixels_fnc(self.image.get_pos())
+        image.blit(self.image.get(), pos)
+        image.blit(self.font.render(str(self.unit.health)), pos)
+
+    def move(self, path):
+        self.image.set_pos(path.end().pos)
+        path = create_pixel_path(path)
+        self.image = AnimatedImage([self.image.get()], path)
+
+class StaticImage(object):
+
+    def __init__(self, image, pos):
+        self.image = image
+        self.pos = pos
+
+    def get(self):
+        return self.image
+
+    def get_pos(self):
+        return self.pos
+
+    def set_pos(self, pos):
+        self.pos = pos
+
 class AnimatedImage(object):
     '''Used by units to store image with ability to start traversing
     given path and animate.
     '''
 
-    def __init__(self, static, animated, coord):
-        self._font = utils.Writer(10, (255, 0, 0))
-        self._image = static
-        self._images = animated
-        self._current = self._image
-        self._animated = False
-        self._rect = self._image.get_rect()
-        self._rect.topleft = coord
-        self.health = 100
-
-    def __call__(self):
-        return self._current, self._font.render(str(self.health))
-
-    def get_rect(self):
-        return self._rect
+    def __init__(self, animation, path):
+        self._images = animation
+        self._current = animation[0]
+        self._path = path
+        self._pos = path['path'][0]
+        self.animated = True
+        # Track the time we started, and the time between updates.
+        # Then we can figure out when we have to switch the image.
+        self._anim_delay = 250   # in milliseconds
+        self._move_delay = 20
+        self._anim_update = 0
+        self._move_update = 0
+        self._frame = 0
+        self.update(0)
 
     def update(self, t):
-        if self._animated:
-            if t - self._last_update > self._delay:
+        if self.animated:
+            if t - self._anim_update > self._anim_delay:
                 # animate image
                 self._frame += 1
                 if self._frame >= len(self._images):
                     self._frame = 0
                 self._current = self._images[self._frame]
+                self._anim_update = t
+            if t - self._move_update > self._move_delay:
                 # move image
                 if self._path['current'] == len(self._path['path']) - 1:
-                    self._rect.topleft = self._path['path'][-1]
-                    self.stop_animation()
+                    self._pos = self._path['path'][-1]
+                    self.animated = False
                 else:
                     self._path['current'] += 1
-                    self._rect.topleft = self._path['path'][self._path['current']]
-                self._last_update = t
-        else:
-            self._current = self._image
+                    self._pos = self._path['path'][self._path['current']]
+                self._move_update = t
 
-    def start_animation(self, path, fps=60):
-        # Track the time we started, and the time between updates.
-        # Then we can figure out when we have to switch the image.
-        self._animated = True
-        self._path = create_pixel_path(path)
-        self._current = self._images[0]
-        #self._start = pygame.time.get_ticks()
-        self._delay = 1000 / fps
-        self._last_update = 0
-        self._frame = 0
-        self.update(pygame.time.get_ticks())
+    def get(self):
+        return self._current
 
-    def stop_animation(self):
-        self._animated = False
+    def get_pos(self):
+        return self._pos
 
 
 def create_pixel_path(path):
@@ -220,8 +231,8 @@ def create_pixel_path(path):
     pixel_path = {'current': 0, 'path': []}
     path = straighten_path(path.tiles)
     for tile1, tile2 in zip(path[:-1], path[1:]):
-        x1, y1 = tile1.coord
-        x2, y2 = tile2.coord
+        x1, y1 = tile1.pos
+        x2, y2 = tile2.pos
         # WARNINIG: alg works only for 20 steps
         l_x = (x2 - x1) / 100.0
         l_y = (y2 - y1) / 100.0
@@ -230,7 +241,7 @@ def create_pixel_path(path):
             x1 += delta * l_x
             y1 += delta * l_y
             pixel_path['path'].append((x1, y1))
-    pixel_path['path'].append(path[-1].coord)
+    pixel_path['path'].append(path[-1].pos)
     return pixel_path
 
 
@@ -251,3 +262,4 @@ def straighten_path(path):
             j += 1
     straight_path.append(path[-1])
     return straight_path
+

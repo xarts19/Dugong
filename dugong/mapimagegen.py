@@ -14,13 +14,12 @@ from utils import RES_MANAGER
 
 _LOGGER = logging.getLogger('main.mapimagegen')
 
-def create_level_image(level, level_info):
+def create_level_image(level, level_info, metrics):
     '''Return image of whole level built from tiles.'''
     _LOGGER.debug("Creating level image from description")
     season = level_info['season']
-    tile_width = tile_height = utils.TILE_SIZE
-    map_width = len(level[0]) * tile_width
-    map_height = len(level) * tile_height
+    map_width = len(level[0]) * utils.TILE_SIZE
+    map_height = len(level) * utils.TILE_SIZE
     image = pygame.Surface((map_width, map_height))
     # blit each tile to image
     background = RES_MANAGER.get(':'.join([season,
@@ -43,9 +42,9 @@ def create_level_image(level, level_info):
                     image_name = ':'.join([season, tile.type, name])
                     tile_image = RES_MANAGER.get(image_name)
                 # blit land image as background
-                image.blit(background, tile.coord)
+                image.blit(background, metrics.tiles_to_pixels(tile.pos))
                 # blit specific image for tile
-                image.blit(tile_image, tile.coord)
+                image.blit(tile_image, metrics.tiles_to_pixels(tile.pos))
     return image
 
 

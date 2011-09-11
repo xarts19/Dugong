@@ -148,16 +148,6 @@ class Player(pygame.sprite.RenderUpdates):
         super(Player, self).__init__()
         self.name = name
 
-    def draw(self, surf):
-        for sprite in self:
-             image = sprite.image
-             rect = sprite.rect
-             if isinstance(image, (list, tuple,)):
-                 for i in image:
-                     surf.blit(i, rect)
-             else:
-                 surf.blit(image, rect)
-
     def update(self, *args):
         for unit in self:
             is_alive = unit.update(*args)
@@ -167,16 +157,16 @@ class Player(pygame.sprite.RenderUpdates):
 
 
 class Selection():
-    """Object responsible for selection of tiles.
-    Selection statuses: select, move, target, nothing
-    """
+    """Object responsible for selection of tiles."""
+    # Selection statuses:
+    NOTHING, TARGET, MOVE, SELECT = range(4)
 
     def __init__(self, _map, players):
         self._map = _map
         self._players = players
 
         self.pointed_tile = None
-        self.status = 'nothing'
+        self.status = self.NOTHING
         self.selected_tile = None
         self.reachable = None
         self.attackable = None
@@ -186,20 +176,20 @@ class Selection():
         if self.pointed_tile:
             # pointing to selectable tile
             if self.can_select():
-                self.status = 'select'
+                self.status = self.SELECT
             # pointing to enemy unit
             elif self.can_attack():
-                self.status = 'targer'
+                self.status = self.TARGET
             # pointing to reachable tile
             elif self.can_move():
-                self.status = 'move'
+                self.status = self.MOVE
             # pointing to unreachable tile
             elif not self.can_move():
-                self.status = 'nothing'
+                self.status = self.NOTHING
 
     def highlight(self, pos):
         '''Determine tile where mouse points.'''
-        new_tile = self._map.tile_at_coord(*pos)
+        new_tile = self._map.tile_at_pos(*pos)
         if new_tile and new_tile != self.pointed_tile:
             self.pointed_tile = new_tile
             if self.selected_tile:
@@ -259,10 +249,11 @@ class Selection():
 
 class GameRenderer(object):
 
-    def __init__(self, game_instance):
+    def __init__(self, game_instance, metrics):
         self.game = game_instance
+        self.metrics = metrics
         level, level_info = self.game.map.get_info()
-        self.map_image = mapimagegen.create_level_image(level, level_info)
+        self.map_image = mapimagegen.create_level_image(level, level_info, metrics)
         self.image = pygame.Surface(self.map_image.get_size())
 
         self._green_image = utils.RES_MANAGER.get('selection_green_bold.png')
@@ -282,7 +273,9 @@ class GameRenderer(object):
         # draw map
         self.image.blit(self.map_image, (0, 0))
         # draw units
-        self.game.players.draw(self.image)
+        for player in self.game.players:
+            for unit in player:
+                unit.renderer.render(self.image, self.metrics.tiles_to_pixels)
         # draw cursors
         self.draw_selection(self.image)
         return self.image
@@ -292,24 +285,24 @@ class GameRenderer(object):
         p_t = sel.pointed_tile
         s_t = sel.selected_tile
         if p_t:
-            p_t_c = self.to_pixel_coord(p_t.pos)
-            if sel.status == 'nothing':
+            p_t_c = self.metrics.tiles_to_pixels(p_t.pos)
+            if sel.status == sel.NOTHING:
                 image.blit(self._red_image, p_t_c)
-            elif sel.status == 'target':
+            elif sel.status == sel.TARGET:
                 image.blit(self._target_image, p_t_c)
-            elif sel.status == 'select':
+            elif sel.status == sel.SELECT:
                 image.blit(self._green_image, p_t_c)
-            elif sel.status == 'move':
+            elif sel.status == sel.MOVE:
                 image.blit(self._green_image, p_t_c)
                 self.draw_path(image)
         if s_t:
-            s_t_c = self.to_pixel_coord(s_t.pos)
+            s_t_c = self.metrics.tiles_to_pixels(s_t.pos)
             image.blit(self._orange_image, s_t_c)
             for tile in sel.reachable:
-                c = self.to_pixel_coord(tile.pos)
+                c = self.metrics.tiles_to_pixels(tile.pos)
                 image.blit(self._reachable_image, c)
             for tile in sel.attackable:
-                c = self.to_pixel_coord(tile.pos)
+                c = self.metrics.tiles_to_pixels(tile.pos)
                 image.blit(self._attackable_image, c)
 
     def draw_path(self, image):
@@ -317,11 +310,13 @@ class GameRenderer(object):
         path = self.game.selection.path
         if path.size() < 2:
             return
-        points = path.pixels()
+        points = self.pixels(path.tiles)
         color = (255, 0, 0)
         pygame.draw.lines(image, color, False, points, 3)
 
-    def to_pixel_coord(self, map_coord):
-        y = map_coord[0] * utils.TILE_SIZE
-        x = map_coord[1] * utils.TILE_SIZE
-        return (x, y)
+    def pixels(self, tiles):
+        '''List of coords of pixels of each tile in path.'''
+        return [[v + utils.TILE_SIZE / 2 for v in self.metrics.tiles_to_pixels(tile.pos)]
+                                         for tile in tiles]
+
+

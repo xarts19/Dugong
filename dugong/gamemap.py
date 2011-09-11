@@ -35,12 +35,6 @@ class GameMap(object):
                     occupied_tiles.append(repr(tile))
         return '\n'.join(occupied_tiles)
 
-    def tile_at_coord(self, x, y):
-        '''Return tile object at pixel coords.'''
-        i = y / utils.TILE_SIZE
-        j = x / utils.TILE_SIZE
-        return self.tile_at_pos(i, j)
-
     def tile_at_pos(self, i, j):
         '''Return tile object at matrix coords.'''
         if len(self._level) > i and i >= 0 \
@@ -128,11 +122,6 @@ class Path(object):
         if tile:
             self.tiles.append(tile)
 
-    def pixels(self):
-        '''List of coords of pixels of each tile in path.'''
-        return [[v + utils.TILE_SIZE / 2 for v in tile.coord]
-                                         for tile in self.tiles]
-
     def size(self):
         return len(self.tiles)
 
@@ -190,9 +179,8 @@ class Tile(object):
         self.defence = type_info['defence']
         self.pass_cost = type_info['pass_cost']
         self.heal = type_info['heal']
-        self._owner = None
+        self.owner = None
         self._pos = pos
-        self._coord = pos[1] * utils.TILE_SIZE, pos[0] * utils.TILE_SIZE
         self._unit = None
 
     def __repr__(self):
@@ -201,14 +189,6 @@ class Tile(object):
     def distance(self, tile):
         return abs(self.pos[0] - tile.pos[0]) \
             + abs(self.pos[1] - tile.pos[1])
-
-    @property
-    def owner(self):
-        return self._owner
-
-    @owner.setter
-    def owner(self, value):
-        self._owner = value
 
     @property
     def unit(self):
@@ -224,10 +204,4 @@ class Tile(object):
     @property
     def pos(self):
         return self._pos
-
-    @property
-    def coord(self):
-        return self._coord
-
-
 

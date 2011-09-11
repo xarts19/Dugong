@@ -1,6 +1,9 @@
 
 TODO:
 
+ - define clear interfaces to each major class (e. g. all methods that any other
+    class might need from it)
+
  - add interactivity to statusbar
  - generalize animation (to allow different animations and moves for units)
  - add jump animation
@@ -21,7 +24,9 @@ TODO:
         each action. (E. g.: which tiles can be selected, where can all units go,
         who they can attack, and client just uses precalculated information. Only
         after player does something, server returns new possible actions (if any)
-        along with response on what to do about current action)
+        along with response on what to do about current action).
+        Client will only need general information about units in that case, 
+        like image and position.
 
  - separate rendering logic from game logic to simplify classes (that they can be
     run on the server for example)

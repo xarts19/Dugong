@@ -90,7 +90,7 @@ class Window(object):
             # tick pygame clock
             # you can limit the fps by passing the desired frames per
             # second to tick()
-            self.clock.tick(60)
+            self.clock.tick(utils.FPS)
 
             # update the title bar with our frames per second
             pygame.display.set_caption('Ancient Empires at %d fps'

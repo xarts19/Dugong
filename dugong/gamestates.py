@@ -76,25 +76,28 @@ class GameStateManager(object):
 
         # state is changing
         if trans:
+            transp = int(step * 60.0 / utils.FPS)
             curr_image = self.states[-1].render()
-            prev_image.set_alpha(255 - step * 5)
-            curr_image.set_alpha(step * 6)
+            prev_image.set_alpha(255 - transp * 6)
+            curr_image.set_alpha(transp * 6)
             step += 1
-            if step == 32:
+            if step == utils.FPS / 2:
                 trans = False
             image = pygame.Surface(utils.SCREEN_SIZE)
             image.blit(prev_image, (0, 0))
             image.blit(curr_image, (0, 0))
         else:
-            image = pygame.Surface(utils.SCREEN_SIZE)
             if self.states[-1].is_transparent:
+                image = pygame.Surface(utils.SCREEN_SIZE)
                 back = self.states[-2].render()
+                back.set_alpha(200)
                 image.blit(back, (0, 0))
                 front = self.states[-1].render()
                 front.set_alpha(170)
                 image.blit(front, (0, 0))
             else:
                 image = self.states[-1].render()
+                image.set_alpha(255)
 
         self._transition_info = (last_state, trans, step, prev_image, curr_image)
         return image
@@ -108,12 +111,15 @@ class _GameState(object):
         self.is_transparent = False
         self._state_manager = state_manager
         self._game = game.Game(level_info)
-        self._game_renderer = game.GameRenderer(self._game)
+
+        self._metrics = MetricTransformer()
+        self._game_renderer = game.GameRenderer(self._game, self._metrics)
+        self._metrics.set_map_size(self._game_renderer.get_size())
+
         self._name = level_name
         self._background = RES_MANAGER.get('game_background.jpg',
                                             size=utils.SCREEN_SIZE)
         self._statusbar = StatusBar(utils.SCREEN_SIZE)
-        self.screen_position = [0, 0]
 
     def cleanup(self):
         pass
@@ -131,7 +137,7 @@ class _GameState(object):
                             if res == 'endturn':
                                 self._game.end_turn()
                     else:
-                        res = self._game.click_event(self._to_map_coords(pygame.mouse.get_pos()))
+                        res = self._game.click_event(self._metrics.screen_to_tiles(pygame.mouse.get_pos()))
                         if res:
                             if res[0] == 'attack':
                                 self._state_manager.push_state(_AttackState(self._state_manager, *res[1]))
@@ -142,14 +148,14 @@ class _GameState(object):
 
     def update(self, game_ticks):
         self.move_view(pygame.mouse.get_pos())
-        status_info = self._game.mouseover_event(self._to_map_coords(pygame.mouse.get_pos()))
+        status_info = self._game.mouseover_event(self._metrics.screen_to_tiles(pygame.mouse.get_pos()))
         self._statusbar.update(status_info)
         self._game.update(game_ticks)
 
     def render(self):
         # draw screen
         self._background.blit(self._game_renderer.render(),
-                              self._from_map_coords((0, 0)))
+                              self._metrics.map_topleft())
         self._background.blit(self._statusbar.get_image(),
                               self._statusbar.get_pos())
         return self._background
@@ -158,37 +164,19 @@ class _GameState(object):
         self._state_manager.push_state(_InGameMenuState(self._state_manager))
 
     def move_view(self, mouse):
-        if 5 < mouse[0] < 75 and self._to_map_coords((0, 0))[0] > 0:
-            self.screen_position[0] += utils.SCROLL_SPEED
+        if 5 < mouse[0] < 75 and self._metrics.map_is_hidden_at(self._metrics.W):
+            self._metrics.move_view(x=utils.SCROLL_SPEED)
 
-        elif utils.SCREEN_SIZE[0] - 75 < mouse[0] < utils.SCREEN_SIZE[0] - 5 \
-                and self._from_map_coords(self._game_renderer.get_size())[0] > utils.SCREEN_SIZE[0]:
-            self.screen_position[0] -= utils.SCROLL_SPEED
+        elif 5 < utils.SCREEN_SIZE[0] - mouse[0] < 75 \
+                and self._metrics.map_is_hidden_at(self._metrics.E):
+            self._metrics.move_view(x=-utils.SCROLL_SPEED)
 
-        if 5 < mouse[1] < 75 and self._to_map_coords((0, 0))[1] > 0:
-            self.screen_position[1] += utils.SCROLL_SPEED
+        if 5 < mouse[1] < 75 and self._metrics.map_is_hidden_at(self._metrics.N):
+            self._metrics.move_view(y=utils.SCROLL_SPEED)
 
-        elif utils.SCREEN_SIZE[1] - 75 < mouse[1] < utils.SCREEN_SIZE[1] - 5 \
-                and self._from_map_coords(self._game_renderer.get_size())[1] > utils.SCREEN_SIZE[1]:
-            self.screen_position[1] -= utils.SCROLL_SPEED
-
-    def _get_shift(self):
-        # calculate map shift from the edge of the screen
-        size = utils.SCREEN_SIZE
-        w, h = self._game_renderer.get_size()
-        view = self.screen_position
-        shift = (size[0] - w) / 2 + view[0], (size[1] - h) / 2 + view[1]
-        return shift
-
-    def _to_map_coords(self, pos):
-        '''Correction to coords due to drawing the map in the center.'''
-        shift = self._get_shift()
-        return pos[0] - shift[0], pos[1] - shift[1]
-
-    def _from_map_coords(self, pos):
-        '''Backwards correction.'''
-        shift = self._get_shift()
-        return pos[0] + shift[0], pos[1] + shift[1]
+        elif  5 < utils.SCREEN_SIZE[1] - mouse[1] < 75 \
+                and self._metrics.map_is_hidden_at(self._metrics.S):
+            self._metrics.move_view(y=-utils.SCROLL_SPEED)
 
 
 class _AttackState(object):
@@ -443,7 +431,7 @@ class StatusBar(object):
         x = 100
         unit = info['unit']
         if unit:
-            self.image.blit(unit.image[0], (x, 10))
+            self.image.blit(unit.renderer.image.get(), (x, 10))
             health_moves = self.font.render("H: " + str(unit.health) + " M: " + str(unit.moves_left))
             self.image.blit(health_moves, (x + utils.TILE_SIZE + 5, 10))
             attack_defence = self.font.render("A: " + str(unit.attack_damage) + " D: " + str(unit.defence))
@@ -473,3 +461,48 @@ class StatusBar(object):
             return "endturn"
         return None
 
+class MetricTransformer(object):
+
+    N, S, W, E = range(4)
+
+    def __init__(self):
+        self.map_size = (0, 0)
+        self.screen_pos = [0, 0]
+
+    def set_map_size(self, size):
+        self.map_size = size
+
+    def pixels_to_tiles(self, pixels):
+        return pixels[1] / utils.TILE_SIZE, pixels[0] / utils.TILE_SIZE
+
+    def tiles_to_pixels(self, tiles):
+        return tiles[1] * utils.TILE_SIZE, tiles[0] * utils.TILE_SIZE
+
+    def _get_shift(self):
+        # calculate map shift from the edge of the screen
+        size = utils.SCREEN_SIZE
+        w, h = self.map_size
+        view = self.screen_pos
+        shift = (size[0] - w) / 2 + view[0], (size[1] - h) / 2 + view[1]
+        return shift
+
+    def screen_to_tiles(self, screen):
+        '''Correction to coords due to drawing the map in the center.'''
+        shift = self._get_shift()
+        return self.pixels_to_tiles((screen[0] - shift[0], screen[1] - shift[1]))
+
+    def map_is_hidden_at(self, direction):
+        if direction is self.W:
+            return self._get_shift()[0] < 0
+        elif direction is self.E:
+            return self._get_shift()[0] > utils.SCREEN_SIZE[0] - self.map_size[0]
+        elif direction is self.N:
+            return self._get_shift()[1] < 0
+        elif direction is self.S:
+            return self._get_shift()[1] > utils.SCREEN_SIZE[1] - self.map_size[1]
+
+    def move_view(self, x=0, y=0):
+        self.screen_pos = self.screen_pos[0] + x, self.screen_pos[1] + y
+
+    def map_topleft(self):
+        return self._get_shift()
