@@ -1,6 +1,7 @@
 
 TODO:
 
+ - add tux penguins as units
  - define clear interfaces to each major class (e. g. all methods that any other
     class might need from it)
 
@@ -12,6 +13,7 @@ TODO:
  - money income
  - make unit grey if it can't do anything
  - improve water tile-matching algs (e. g. for river curves)
+ - improve tiling system (tile transitions (see article))
 
  - separate game logic, moke it ready to implement on a server side 
     (also graphics handling needs to be separated: game reads player input,
@@ -28,11 +30,6 @@ TODO:
         Client will only need general information about units in that case, 
         like image and position.
 
- - separate rendering logic from game logic to simplify classes (that they can be
-    run on the server for example)
-    -- unit rendering left
- - abstract pixel resolutions from game logic and take it away to input handler
-
 
 LONG-TERM:
 
@@ -46,3 +43,6 @@ DONE (by date):
  - draw attack radius just like walking radius
  - add resource manager for images
  - add hint that 's' skips attack video
+ - separate rendering logic from game logic to simplify classes
+ - abstract pixel resolutions from game logic and take it away to input handler
+

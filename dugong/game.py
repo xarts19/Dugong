@@ -20,13 +20,13 @@ __author__ = "Xarts19 (xarts19@gmail.com)"
 __version__ = "Version: 0.0.1 "
 __date__ = "Date: 2011-08-23 16:18:33.633299 "
 
-_LOGGER = logging.getLogger('main.game')
+LOGGER = logging.getLogger('main.game')
 
 class Game(object):
     '''Represents current game state.'''
 
     def __init__(self, level_info):
-        _LOGGER.debug('Initializing game map')
+        LOGGER.debug('Initializing game map')
         self._unit_factory = units.UnitFactory()
         self.players = Players([])
         # create map

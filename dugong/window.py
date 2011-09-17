@@ -22,12 +22,12 @@ __author__ = "Xarts19 (xarts19@gmail.com)"
 __version__ = "Version: 0.0.1 "
 __date__ = "Date: 2011-08-22 12:23:45.187597 "
 
-_LOGGER = logging.getLogger('main.window')
+LOGGER = logging.getLogger('main.window')
 
 if not pygame.font:
-    _LOGGER.warning('Fonts disabled')
+    LOGGER.warning('Fonts disabled')
 if not pygame.mixer:
-    _LOGGER.warning('Sound disabled')
+    LOGGER.warning('Sound disabled')
 
 
 class Window(object):
@@ -41,7 +41,7 @@ class Window(object):
 
         utils.load_configs()
 
-        _LOGGER.debug('Initializing window')
+        LOGGER.debug('Initializing window')
 
         # load and set up pygame
         pygame.init()
@@ -54,12 +54,12 @@ class Window(object):
             wnd_w, wnd_h = displ_w - 50, displ_h - 50
             utils.SCREEN_SIZE = wnd_w, wnd_h
 
-        # create our window
-        self.window = pygame.display.set_mode(utils.SCREEN_SIZE)
-
         # initial window position at the center of the screen
         center_x, center_y = (displ_w - wnd_w) / 2, (displ_h - wnd_h) / 2
         os.environ['SDL_VIDEO_WINDOW_POS'] = str(center_x) + ',' + str(center_y)
+
+        # create our window
+        self.window = pygame.display.set_mode(utils.SCREEN_SIZE)
 
         # clock for ticking
         self.clock = pygame.time.Clock()
@@ -81,7 +81,7 @@ class Window(object):
         """Runs the game. Contains the game loop that computes and renders
         each frame."""
 
-        _LOGGER.debug('Game loop started')
+        LOGGER.debug('Game loop started')
 
         running = True
         # run until something tells us to stop
@@ -104,4 +104,4 @@ class Window(object):
             self.window.blit(image, (0, 0))
             pygame.display.flip()
 
-        _LOGGER.debug('Game loop finished')
+        LOGGER.debug('Game loop finished')

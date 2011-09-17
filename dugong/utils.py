@@ -16,7 +16,7 @@ __author__ = "Xarts19 (xarts19@gmail.com)"
 __version__ = "Version: 0.0.1 "
 __date__ = "Date: 2011-08-23 15:06:07.704924 "
 
-_LOGGER = logging.getLogger('main.utils')
+LOGGER = logging.getLogger('main.utils')
 GAME_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 IMAGES_DIR = os.path.join(GAME_DIR, 'images')
 DESCR_DIR = os.path.join(GAME_DIR, 'descr')
@@ -40,11 +40,11 @@ class ResourceManager(object):
             if res_name == 'levels_info':
                 res = load_levels_info()
             elif res_name == 'tile_types':
-                _LOGGER.debug("Loading tiles data")
+                LOGGER.debug("Loading tiles data")
                 from configs.tiletypes import TILE_TYPES
                 res = TILE_TYPES
             elif res_name == 'unit_types':
-                _LOGGER.debug("Loading units data")
+                LOGGER.debug("Loading units data")
                 from configs.unittypes import UNIT_TYPES
                 res = UNIT_TYPES
             else:
@@ -63,7 +63,7 @@ class ResourceManager(object):
 RES_MANAGER = ResourceManager()
 
 def load_configs():
-    _LOGGER.debug('Loading configs')
+    LOGGER.debug('Loading configs')
     from configs import config
     global SCREEN_SIZE
     global TILE_SIZE
@@ -75,12 +75,12 @@ def load_configs():
         SCROLL_SPEED = config.graphics['scroll_speed']
         FPS = config.graphics['fps']
     except KeyError:
-        _LOGGER.exception("Config file is broken.")
+        LOGGER.exception("Config file is broken.")
 
 
 def load_levels_info():
     '''Format info a little, check for integrity and return levels info.'''
-    _LOGGER.debug("Loading levels data")
+    LOGGER.debug("Loading levels data")
     from configs.levels import LEVELS, ABBREVIATIONS
     # transform to more friendly for game format
     # format map from multiline string to 2d array of letters
@@ -91,7 +91,7 @@ def load_levels_info():
         # all rows should be the same size
         for row in level['map']:
             if len(row) != len(level['map'][0]):
-                _LOGGER.exception('not all rows in map "%s" have same width', name)
+                LOGGER.exception('not all rows in map "%s" have same width', name)
     return levels_info
 
 
@@ -102,7 +102,7 @@ def load_image(name, colorkey=None):
     try:
         image = pygame.image.load(fullname)
     except pygame.error, message:
-        _LOGGER.exception("Can't load image: %s", message)
+        LOGGER.exception("Can't load image: %s", message)
         image = pygame.Surface((TILE_SIZE, TILE_SIZE))
         image.fill((255, 0, 0, 255))
         colorkey = None
@@ -113,7 +113,7 @@ def load_image(name, colorkey=None):
         else:
             image = image.convert()
     except:
-        _LOGGER.exception('pygame not initialized')
+        LOGGER.exception('pygame not initialized')
     # optionally set transparent color
     # if -1 is passes as color, use first pixel
     if colorkey is not None:

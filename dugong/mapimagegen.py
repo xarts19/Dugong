@@ -12,11 +12,11 @@ import os
 import utils
 from utils import RES_MANAGER
 
-_LOGGER = logging.getLogger('main.mapimagegen')
+LOGGER = logging.getLogger('main.mapimagegen')
 
 def create_level_image(level, level_info, metrics):
     '''Return image of whole level built from tiles.'''
-    _LOGGER.debug("Creating level image from description")
+    LOGGER.debug("Creating level image from description")
     season = level_info['season']
     map_width = len(level[0]) * utils.TILE_SIZE
     map_height = len(level) * utils.TILE_SIZE

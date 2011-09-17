@@ -1,0 +1,1180 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+	<html xml:lang="en" lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:fb="http://www.facebook.com/2008/fbml">
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+		<title>Tile/Map-Based Game Techniques: Handling Terrain Transitions</title>
+		<link rel="shortcut icon" href='http://www.gamedev.net/favicon.ico' />
+		<link rel="image_src" href='http://public.gamedev.net/public/style_images/master/meta_image.png' />
+        <script type='text/javascript'>
+            jsDebug = 0; /* Must come before JS includes */
+            USE_RTE = 0;
+            DISABLE_AJAX = parseInt(0); /* Disables ajax requests where text is sent to the DB; helpful for charset issues */
+            inACP   = false;
+        </script>		
+
+
+ <script language="Javascript" type="text/javascript" src="http://partner.googleadservices.com/gampad/google_service.js"></script>
+
+<script language="Javascript" type="text/javascript">
+    GS_googleAddAdSenseService("ca-pub-3167291168602081");
+    GS_googleEnableAllServices();
+</script>
+<script language="Javascript" type="text/javascript">
+GA_googleAddSlot("ca-pub-3167291168602081", "Box_Main");
+GA_googleAddSlot("ca-pub-3167291168602081", "Leaderboard_Main");
+GA_googleAddSlot("ca-pub-3167291168602081", "Spotlight_Main");
+GA_googleAddSlot("ca-pub-3167291168602081", "In-text_main");
+
+
+GA_googleFetchAds();
+
+var _gaq = _gaq || []; _gaq.push(['_setAccount', 'UA-279474-1']); _gaq.push(['_trackPageview']);
+
+(function () {
+  var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+  ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+  var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+})();
+
+</script>
+
+
+<script type="text/javascript" src="http://public.gamedev.net/public/jwplayer/jwplayer.js" ></script> 
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" ></script> 
+<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.7.2/jquery-ui.min.js" ></script> 
+<script src="/public/js/3rd_party/tiptip/jquery.tipTip.minified.js" type="text/javascript"></script>
+
+<script src="/public/js/3rd_party/syntaxhighlighter/scripts/shCore.js" type="text/javascript"></script>
+<script src="/public/js/3rd_party/syntaxhighlighter/scripts/shCore.js" type="text/javascript"></script>
+<script src="/public/js/3rd_party/syntaxhighlighter/scripts/shAutoloader.js" type="text/javascript"></script>
+
+<link rel="stylesheet" type="text/css" href="/public/js/3rd_party/tiptip/tipTip.css" />
+<link rel="stylesheet" type="text/css" href="/public/js/3rd_party/syntaxhighlighter/styles/shCoreDefault.css" />
+
+<link rel="stylesheet" type="text/css" href="http://public.gamedev.net/public/js/3rd_party/lightbox/themes/default/jquery.lightbox.css" />
+<!--[if IE]>
+		<script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+
+<!--[if IE 6]><link rel="stylesheet" type="text/css" href="http://public.gamedev.net/public/js/3rd_party/lightbox/themes/default/jquery.lightbox.ie6.css" /><![endif]-->
+
+<script type="text/javascript" src="http://public.gamedev.net/public/js/3rd_party/lightbox/jquery.lightbox.min.js"></script>
+
+<script type="text/javascript"> 
+jQuery.noConflict();  
+this.vtip = function() {    
+
+    this.xOffset = -10; // x distance from mouse
+    this.yOffset = 10; // y distance from mouse       
+    
+    jQuery(".vtip").unbind().hover(    
+        function(e) {
+
+            this.t = this.title;
+            this.title = ''; 
+            this.top = (e.pageY + yOffset); this.left = (e.pageX + xOffset);
+            
+            jQuery('body').append( '<p id="vtip"><img id="vtipArrow" />' + this.t + '</p>' );
+                        
+            jQuery('p#vtip #vtipArrow').attr("src", '/images/vtip_arrow.png');
+            jQuery('p#vtip').css("top", this.top+"px").css("left", this.left-125+"px").fadeIn("fast");
+            
+        },
+        function() {
+            this.title = this.t;
+            jQuery("p#vtip").fadeOut("fast").remove();
+        }
+    ).mousemove(
+        function(e) {
+            this.top = (e.pageY + yOffset);
+            this.left = (e.pageX -125 + xOffset);
+                         
+            jQuery("p#vtip").css("top", this.top+"px").css("left", this.left-125+"px");
+        }
+    );            
+    
+};
+
+jQuery(document).ready(function(){
+
+jQuery('.lightbox').lightbox();
+
+	jQuery("ul.menusubnav").parent().append("<span></span>"); //Only shows drop down trigger when js is enabled - Adds empty span tag after ul.menusubnav
+
+        if (jQuery("#featured").length) {
+	
+	jQuery("#featured").tabs({fx:{opacity: "toggle"}}).tabs("rotate", 8000, true);
+		
+	jQuery("#featured").hover(  
+        function() {  
+          jQuery("#featured").tabs("rotate",0,true);  
+         },  
+         function() {  
+          jQuery("#featured").tabs("rotate",5000,true);  
+        })
+
+        }
+
+if (jQuery("#spotbox").length && jQuery("#journalbox")) {
+  if (jQuery("#spotbox").css("height") > jQuery("#journalbox").css("height")) {
+jQuery("#journalbox").css("height", jQuery("#spotbox").css("height"));
+}
+else {
+jQuery("#spotbox").css("height", jQuery("#journalbox").css("height"));
+
+}
+
+}
+
+
+        vtip();
+ 
+        if (jQuery(".scrollable").length) {
+
+              jQuery(".scrollable").scrollable();
+	        // initialize scrollable
+              jQuery("ul.gdstabs").tabs("#panes > div");
+	      jQuery("ul.gds_gameinfo_tabs").tabs("#panes2 > div");
+         }
+
+    if (jQuery("a.hublink").length) {
+		jQuery("a.hublink").click(function()
+		{
+			jQuery('#hub_mc').html(jQuery(jQuery(this).attr("rel")).html());
+		});
+	}
+
+
+});
+
+
+   var feedbackForm;
+
+   function submitFeedback(form){
+        dataString = $(form).serialize();
+        feedbackForm = form;
+
+        jQuery.ajax({
+        type: "POST",
+        url: "/feedback/post.php",
+        data: dataString,
+        dataType: "html",  /* could also be json */
+        success: function(data) {
+
+jQuery(feedbackForm).parent().html(data);
+
+        }
+ 
+        });
+ 
+        return false;           
+ 
+    };
+
+function shpath()
+{
+  var args = arguments,
+      result = []
+      ;
+       
+  for(var i = 0; i < args.length; i++)
+      result.push(args[i].replace('@', '/public/js/3rd_party/syntaxhighlighter/scripts/'));
+       
+  return result
+};
+ 
+
+
+jQuery(document).ready(function(){
+
+SyntaxHighlighter.autoloader.apply(null, shpath(
+  'applescript            @shBrushAppleScript.js',
+  'actionscript3 as3      @shBrushAS3.js',
+  'bash shell             @shBrushBash.js',
+  'coldfusion cf          @shBrushColdFusion.js',
+  'cpp c                  @shBrushCpp.js',
+  'c# c-sharp csharp      @shBrushCSharp.js',
+  'css                    @shBrushCss.js',
+  'delphi pascal          @shBrushDelphi.js',
+  'diff patch pas         @shBrushDiff.js',
+  'erl erlang             @shBrushErlang.js',
+  'groovy                 @shBrushGroovy.js',
+  'java                   @shBrushJava.js',
+  'jfx javafx             @shBrushJavaFX.js',
+  'js jscript javascript  @shBrushJScript.js',
+  'perl pl                @shBrushPerl.js',
+  'php                    @shBrushPhp.js',
+  'text plain             @shBrushPlain.js',
+  'py python              @shBrushPython.js',
+  'ruby rails ror rb      @shBrushRuby.js',
+  'sass scss              @shBrushSass.js',
+  'scala                  @shBrushScala.js',
+  'sql                    @shBrushSql.js',
+  'vb vbnet               @shBrushVb.js',
+  'xml xhtml xslt html    @shBrushXml.js',
+  'lua                    @shBrushLua.js'
+));
+
+SyntaxHighlighter.all();
+});
+
+
+</script>
+
+
+		<link rel="stylesheet" type="text/css" media="print" href="http://public.gamedev.net/public/style_css/css_4/ipb_print.css" /> <link rel="stylesheet" type="text/css" title="Main" media="print" href="http://public.gamedev.net/public/style_css/css_4/ipcontent_print.css" /> <link rel="stylesheet" type="text/css" media='screen' href="http://public.gamedev.net/public/min/index.php?ipbv=31007&amp;css=1&amp;f=public/style_css/css_4/legacy.css,public/style_css/css_4/gdshowcase.css,public/style_css/css_4/hub.css,public/style_css/css_4/iptracker.css,public/style_css/css_4/gdnet.css,public/style_css/css_4/calendar_select.css,public/style_css/css_4/ipb_editor.css,public/style_css/css_4/ipcontent.css,public/style_css/css_4/ipb_common.css,public/style_css/css_4/ipb_styles.css" /> <!--[if lte IE 7]> <link rel="stylesheet" type="text/css" title='Main' media="screen" href="http://public.gamedev.net/public/style_css/css_4/ipb_ie.css" /> <![endif]-->
+<link rel="stylesheet" type="text/css" href="http://yui.yahooapis.com/3.3.0/build/cssreset/reset-context-min.css">
+<link rel="stylesheet" href="http://yui.yahooapis.com/3.3.0/build/cssbase/base-context-min.css" type="text/css"> 
+
+
+		<!--<meta http-equiv="X-UA-Compatible" content="IE=7" />-->
+		
+	
+	<meta name="description" content="Trying to make a fluid world out of tile graphics can require a lot of extra graphics to make the different tiles merge smoothly but this article shows a way to do it with a lot less graphics and headaches." />
+	
+
+	<meta name="keywords" content="Tile/Map-Based,Game,Techniques,Handling,Terrain,Transitions,This,article,another,series,Tile/Map-based,discuss,method,handling,terrain,transitions,your,main" />
+	
+
+	<meta name="identifier-url" content="http://www.gamedev.net/page/resources/_/reference/programming/isometric-and-tile-based-games/298/tilemap-based-game-techniques-handling-terrai-r934" />
+	
+
+	<meta name="gdnet" content="game development, game, development, industry, games, gaming, gamer, make games, game programming, programming, game art, art, media, social gaming, game music, audio, design, publishing, publisher, publish, game books, graphics, gpu, networking, artificial intelligence, ai, physics, multiplayer, mmorpg, c++, lua, c, maya, 3dsmax, photoshop, visual studio, xna, windows, linux, xbox, ps3, wii" />
+	
+
+		<meta property="og:title" content="Tile/Map-Based Game Techniques: Handling Terrain Transitions"/>
+		<meta property="og:site_name" content="GameDev.net"/>
+		<meta property="og:image" content="http://public.gamedev.net/public/style_images/master/meta_image.png"/>
+		<script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/prototype/1.6/prototype.js'></script>
+		<script type='text/javascript' src='http://ajax.googleapis.com/ajax/libs/scriptaculous/1.8/scriptaculous.js?load=effects,dragdrop,builder'></script>
+	<script type='text/javascript' src='http://public.gamedev.net/public/min/index.php?ipbv=31007&amp;charset=UTF-8&amp;f=public/js/ipb.js,public/js/ips.quickpm.js,public/js/ips.sharelinks.js,public/js/ips.rating.js,cache/lang_cache/1/ipb.lang.js' charset='UTF-8'></script>
+	
+		
+			
+			
+			
+			
+				<link rel="canonical" href="http://www.gamedev.net/page/resources/_/reference/programming/isometric-and-tile-based-games/298/tilemap-based-game-techniques-handling-terrai-r934" />
+			
+		
+	
+
+		
+			
+			
+				<link rel="alternate feed" type="application/rss+xml" title="GameDev.net Forums RSS" href="http://www.gamedev.net/rss/forums/1-gamedevnet-forums-rss/" />
+			
+			
+			
+		
+
+			
+			
+				<link rel="alternate feed" type="application/rss+xml" title="GameDev.net Journals RSS feed " href="http://www.gamedev.net/rss/blog/" />
+			
+			
+			
+		
+
+			
+			
+				<link rel="alternate feed" type="application/rss+xml" title="Events Calendar" href="http://www.gamedev.net/rss/calendar/1-events-calendar/" />
+			
+			
+			
+		
+
+			
+			
+				<link rel="alternate feed" type="application/rss+xml" title="Last 10 Submissions RSS Feed" href="http://www.gamedev.net/rss/downloads/" />
+			
+			
+			
+		
+
+			
+			
+				<link rel="alternate feed" type="application/rss+xml" title="Articles" href="http://www.gamedev.net/rss/ccs/1-articles/" />
+			
+			
+			
+		
+
+			
+			
+				<link rel="alternate feed" type="application/rss+xml" title="Books" href="http://www.gamedev.net/rss/ccs/3-books/" />
+			
+			
+			
+		
+
+			
+			
+				<link rel="alternate feed" type="application/rss+xml" title="Events" href="http://www.gamedev.net/rss/ccs/16-events/" />
+			
+			
+			
+		
+
+			
+			
+				<link rel="alternate feed" type="application/rss+xml" title="Jobs" href="http://www.gamedev.net/rss/ccs/4-jobs/" />
+			
+			
+			
+		
+
+			
+			
+				<link rel="alternate feed" type="application/rss+xml" title="News" href="http://www.gamedev.net/rss/ccs/11-news/" />
+			
+			
+			
+		
+
+			
+			
+				<link rel="alternate feed" type="application/rss+xml" title="News: GDNet Marketplace News" href="http://www.gamedev.net/rss/ccs/11c920-gdnet-marketplace-news/" />
+			
+			
+			
+		
+	
+
+	
+
+<script type='text/javascript'>
+	var isRTL	= false;
+	var rtlIe	= '';
+	var rtlFull	= '';
+</script>
+
+		
+		<script type='text/javascript'>
+	//<![CDATA[
+		/* ---- URLs ---- */
+		ipb.vars['base_url'] 			= 'http://www.gamedev.net/index.php?s=5cc5bfb384c822bc82110f2f93053d4c&';
+		ipb.vars['board_url']			= 'http://www.gamedev.net';
+		ipb.vars['loading_img'] 		= 'http://public.gamedev.net/public/style_images/master/loading.gif';
+		ipb.vars['active_app']			= 'ccs';
+		ipb.vars['upload_url']			= 'http://uploads.gamedev.net';
+		/* ---- Member ---- */
+		ipb.vars['member_id']			= parseInt( 0 );
+		ipb.vars['is_supmod']			= parseInt( 0 );
+		ipb.vars['is_admin']			= parseInt( 0 );
+		ipb.vars['secure_hash'] 		= '880ea6a14ea49e853634fbdc5015a024';
+		ipb.vars['session_id']			= '5cc5bfb384c822bc82110f2f93053d4c';
+		ipb.vars['can_befriend']		= true;
+		ipb.vars['twitter_id']			= 0;
+		ipb.vars['fb_uid']				= 0;
+		/* ---- cookies ----- */
+		ipb.vars['cookie_id'] 			= 'gd_';
+		ipb.vars['cookie_domain'] 		= '';
+		ipb.vars['cookie_path']			= '/';
+		/* ---- Rate imgs ---- */
+		ipb.vars['rate_img_on']			= 'http://public.gamedev.net/public/style_images/master/bullet_star.png';
+		ipb.vars['rate_img_off']		= 'http://public.gamedev.net/public/style_images/master/bullet_star_off.png';
+		ipb.vars['rate_img_rated']		= 'http://public.gamedev.net/public/style_images/master/bullet_star_rated.png';
+		/* ---- Uploads ---- */
+		ipb.vars['swfupload_swf']		= 'http://www.gamedev.net/public/js/3rd_party/swfupload/swfupload.swf';
+		ipb.vars['swfupload_enabled']	= true;
+		ipb.vars['use_swf_upload']		= ( '' == 'flash' ) ? true : false;
+		ipb.vars['swfupload_debug']		= false; /* SKINNOTE: Turn off for production */
+		/* ---- other ---- */
+		ipb.vars['live_search_limit'] 	= 4;
+		ipb.vars['highlight_color']		= "#ade57a";
+		ipb.vars['charset']				= "UTF-8";
+		ipb.vars['use_rte']				= 1;
+		ipb.vars['image_resize']		= 1;
+		ipb.vars['image_resize_force']  = 640;
+		ipb.vars['seo_enabled']			= 1;
+		
+		ipb.vars['seo_params']			= {"start":"-","end":"\/","varBlock":"\/page__","varSep":"__"};
+		
+		/* Templates/Language */
+		ipb.templates['ajax_loading'] 	= "<div id='ajax_loading'>" + ipb.lang['loading'] + "</div>";
+		ipb.templates['close_popup']	= "<img src='http://public.gamedev.net/public/style_images/master/close_popup.png' alt='x' />";
+		ipb.templates['rss_shell']		= new Template("<ul id='rss_menu'>#{items}</ul>");
+		ipb.templates['rss_item']		= new Template("<li><a href='#{url}' title='#{title}'>#{title}</a></li>");
+		ipb.templates['resized_img']	= new Template("<span>Resized to #{percent}% (was #{width} x #{height}) - Click image to enlarge</span>");
+		ipb.templates['m_add_friend']	= new Template("<a href='http://www.gamedev.net/index.php?app=members&amp;module=profile&amp;section=friends&amp;do=add&amp;member_id=#{id}' title='Add as Friend'><img src='http://public.gamedev.net/public/style_images/master/user_add.png' alt='Add as Friend' /></a>");
+		ipb.templates['m_rem_friend']	= new Template("<a href='http://www.gamedev.net/index.php?app=members&amp;module=profile&amp;section=friends&amp;do=remove&amp;member_id=#{id}' title='Remove Friend'><img src='http://public.gamedev.net/public/style_images/master/user_delete.png' alt='Remove Friend' /></a>");
+		ipb.templates['autocomplete_wrap'] = new Template("<ul id='#{id}' class='ipb_autocomplete' style='width: 250px;'></ul>");
+		ipb.templates['autocomplete_item'] = new Template("<li id='#{id}'><img src='#{img}' alt='' width='#{img_w}' height='#{img_h}' />&nbsp;&nbsp;#{itemvalue}</li>");
+		ipb.templates['page_jump']		= new Template("<div id='#{id}_wrap' class='ipbmenu_content'><h3 class='bar'>Jump to page</h3><input type='text' class='input_text' id='#{id}_input' size='8' /> <input type='submit' value='Go' class='input_submit add_folder' id='#{id}_submit' /></div>");
+	//]]>
+	</script>
+
+
+        <script type='text/javascript'>
+            Loader.boot();
+        </script>        
+		
+	</head>
+	<body id='ipboard_body'>
+		<div id='ipbwrapper'>
+		
+			
+			<div id='header'>
+                                <div id="logoheader">
+
+				<div id='branding'>
+					
+						<a href='http://www.gamedev.net' title='Go to board index' rel="home" accesskey='1'><img src='http://public.gamedev.net/public/style_images/gd_small_logo.png' alt='Logo'/></a>
+					
+				</div>
+
+                                <div id="leaderboardAd">
+                                    
+                                    <script type="text/javascript" language="Javascript">
+                                        GA_googleFillSlot("Leaderboard_Main");    
+                                    </script>
+
+                                </div>
+
+
+				</div>
+
+				<div id='primary_nav'>
+
+					<div id='search'>
+						<form action="http://www.gamedev.net/index.php?app=core&amp;module=search&amp;do=search&amp;fromMainBar=1" method="post" id='search-box' >
+	<fieldset>
+		<label for='main_search' class='hide'>Search</label>
+		<span id='search_wrap'>
+			<input type='text' id='main_search' name='search_term' class='text_input' size='17' tabindex='6' />
+			<span class='choice ipbmenu clickable' id='search_options'></span>
+			<ul id='search_options_menucontent' class='boxShadow' style='display: none'>
+				<li class='title'><strong>Search section:</strong></li>
+				
+				
+				
+				<li class='app'><label for='s_forums' title='Forums'><input type='radio' name='search_app' class='input_radio' id='s_forums' value="forums"  />Forums</label></li><li class='app'><label for='s_members' title='Members'><input type='radio' name='search_app' class='input_radio' id='s_members' value="members"  />Members</label></li><li class='app'><label for='s_core' title='Help Files'><input type='radio' name='search_app' class='input_radio' id='s_core' value="core"  />Help Files</label></li>
+					
+				
+
+					
+				
+
+					
+				
+
+					<li class='app'><label for='s_blog' title='Developer Journals'><input type='radio' name='search_app' class='input_radio' id='s_blog' value="blog"  />Developer Journals</label></li>
+				
+
+					<li class='app'><label for='s_gallery' title='Gallery'><input type='radio' name='search_app' class='input_radio' id='s_gallery' value="gallery"  />Gallery</label></li>
+				
+
+					<li class='app'><label for='s_calendar' title='Calendar'><input type='radio' name='search_app' class='input_radio' id='s_calendar' value="calendar"  />Calendar</label></li>
+				
+
+					<li class='app'><label for='s_downloads' title='Downloads'><input type='radio' name='search_app' class='input_radio' id='s_downloads' value="downloads"  />Downloads</label></li>
+				
+
+					
+				
+
+					<li class='app'><label for='s_ccs' title='Resources'><input type='radio' name='search_app' class='input_radio' id='s_ccs' value="ccs" checked="checked" />Resources</label></li>
+				
+
+					<li class='app'><label for='s_nexus' title='Store'><input type='radio' name='search_app' class='input_radio' id='s_nexus' value="nexus"  />Store</label></li>
+				
+
+					
+				
+
+					
+				
+
+					
+				
+			</ul>
+		</span>
+		<input type='submit' class='submit_input clickable' value='Search' />
+		<a href='http://www.gamedev.net/index.php?app=core&amp;module=search&amp;search_in=ccs' title='<b>Advanced Search</b><br/>Search specific areas of the site using our advanced search engine.' accesskey='4' rel="search" id='adv_search' class='vtip'>Advanced</a>
+	</fieldset>
+</form>
+<script type='text/javascript'>
+	document.observe("dom:loaded", function(){
+		ipb.global.contextualSearch();
+	});
+</script>
+					</div>
+
+
+        <nav id="dark">
+            <ul>
+              <li class="account">
+
+<a href='http://www.gamedev.net/index.php?app=core&module=global&section=login' title='Sign In &raquo;' style="width: 135px;">
+<span class='left' style="font-weight: bold">Sign In &raquo;</span>
+							<span class='services right'>
+								<img src='http://public.gamedev.net/public/style_images/master/loginmethods/facebook.png' alt='Log in with Facebook' />
+								<img src='http://public.gamedev.net/public/style_images/master/loginmethods/twitter.png' alt='Log in with Twitter' />
+								
+								
+							</span>
+</a>							
+                </li>   
+  
+          
+                <li><a href="/">Home</a></li>
+                <li class="drop"><a href="/hub/features">Features</a>
+                    <ul class="menu">
+                    <li><a href="/calendar">Calendar</a></li>
+                    <li><a href="/events">Game Developer Events</a></li>
+                    <li><a href="/files">GDNet Marketplace</a></li>
+                    <li><a href="/subscribe">GDNet+ Subscriptions</a></li>
+                    <li><a href="/community/gds/">GD Showcase</a></li>
+                    <li><a href="/page/community/iotd/">IoTD - Image of the Day</a></li>
+                    <li><a href="/info/newsletter/">Newsletter</a></li>
+                    <li><a href="/store/">Store</a></li>                     
+                    </ul>                
+                </li>
+
+                <li class="drop"><a href="/hub/community">Community</a>
+                    <ul class="menu">
+                    <li><a href="/index">Forums</a></li>
+                    <li><a href="/members/view/list">Members</a></li>
+                    <li><a href="/blogs">Developer Journals</a></li>
+                    <li><a href="/gallery">Gallery</a></li>
+                    <li><a href="/community/chat">Chat</a></li>                      
+                    </ul>                
+                </li>
+                <li class="drop"><a href="/hub/resources">Resources</a>
+                    <ul class="menu">
+                    <li><a href="/reference/">Articles &amp; Resources</a></li>
+                    <li><a href="/books">Books</a></li>
+                    <li><a href="/dict">Game Dictionary</a></li>
+                    <li><a href="http://wiki.gamedev.net/">Wiki</a></li>
+                    <li><a href="/tracker">Problem Tracker</a></li>
+                    </ul>                
+                </li>
+                <li><a href="/files">Marketplace</a></li>
+                <li><a href="/hub/careers">Careers</a></li>
+                <!--<li><a href="/info/media">Advertise</a></li>-->
+            </ul>
+        </nav>
+				</div>
+				
+			
+				<div id='secondary_nav'>
+					<ul id='breadcrumb' class='left'>
+												
+						
+							<li class='first'> <a href='http://www.gamedev.net/page/resources' title='Return to Articles'>Articles</a></li>
+							
+						
+
+							<li><span class='nav_sep'>&gt;</span> <a href='http://www.gamedev.net/page/resources/_/reference/' title='Return to Reference'>Reference</a></li>
+							
+						
+
+							<li><span class='nav_sep'>&gt;</span> <a href='http://www.gamedev.net/page/resources/_/reference/programming/' title='Return to Programming'>Programming</a></li>
+							
+						
+
+							<li><span class='nav_sep'>&gt;</span> <a href='http://www.gamedev.net/page/resources/_/reference/programming/isometric-and-tile-based-games/' title='Return to Isometric and Tile-based Games'>Isometric and Tile-based Games</a></li>
+							
+						
+
+							<li><span class='nav_sep'>&gt;</span> <a href='http://www.gamedev.net/page/resources/_/reference/programming/isometric-and-tile-based-games/298/' title='Return to General'>General</a></li>
+							
+						
+
+							<li><span class='nav_sep'>&gt;</span> Article: Tile/Map-Based Game Techniques: Handling Terrain Transitions</li>
+							
+						
+					</ul>
+					<ul id='section_links' class='right'>
+						
+                                                <li> 
+                                                <a class="links" href='http://www.gamedev.net/index.php?app=core&module=usercp&tab=forums&area=topicsubs'>Watched Topics</a>&nbsp;&nbsp;&nbsp;|
+                                                </li>
+                                                <li>
+                                                <a class="links" href='http://www.gamedev.net/index.php?app=core&module=search&do=active'>Active Content</a>&nbsp;&nbsp;&nbsp;|
+                                                </li>
+						<li><a class="links" href='http://www.gamedev.net/index.php?app=core&module=search&do=active&search_app=ccs' accesskey='2'>View Latest Content&nbsp;&nbsp;|</a></li>
+						<li><img src='http://public.gamedev.net/public/style_images/master/feed.png' alt='RSS Feed' id='rss_feed' class='clickable' /></li>
+					</ul>
+				</div>
+			</div>
+
+			<div id='content' class='clear'>
+<!--
+<div style="width:100%; height: 40px; background-image:url('/images/gdc/gdc2k11_hdbk.gif');margin-top:-5px;margin-bottom: -5px;">
+<a href="/reference/gdc/gdc2011.html"><img src="/images/gdc/gdc_cov_hdr.png" border="0" style="width:478px; height: 40px; float:left; margin-left: -1px;"></a>
+<a href="/reference/gdc/thegame.html"><img src="/images/gdc/gdc_cov_hdr_right.png" style="width:143px; height: 40px; float:right; top: 0px; margin-right: -1px;"></a>
+</div><br clear="left"/>-->
+				<a id='j_content'></a>
+				
+				<!--<link rel="stylesheet" type="text/css" media="screen" href="http://www.gamedev.net/index.php?app=ccs&amp;module=pages&amp;folder=assets&amp;page=demo.css" />-->
+
+<div class="clearfix">
+
+
+
+<div class="aside"><div class="boxad">
+<script type="text/javascript" language="Javascript"> 
+  GA_googleFillSlot("Box_Main");    
+</script> 
+</div>
+					<div class="panel a">
+					<div class="inner">
+
+	<h2 class="article badge">Categories <a href='http://www.gamedev.net/page/resources?view=categories'><u>(See All)</u></a></h2>
+	<ul style="margin-top: 10px;">
+		
+			
+			<li>
+					<a href='http://www.gamedev.net/page/resources/_/reference/'>Reference</a>
+					
+						<ul style="margin-left: 15px;margin-top:10px;">
+							
+								<li>
+									<a href='http://www.gamedev.net/page/resources/_/reference/programming/'>Programming</a>
+								</li>
+							
+
+								<li>
+									<a href='http://www.gamedev.net/page/resources/_/reference/visual-arts/'>Visual Arts</a>
+								</li>
+							
+
+								<li>
+									<a href='http://www.gamedev.net/page/resources/_/reference/103/'>Game Design</a>
+								</li>
+							
+
+								<li>
+									<a href='http://www.gamedev.net/page/resources/_/reference/music-and-sound/'>Music and Sound</a>
+								</li>
+							
+
+								<li>
+									<a href='http://www.gamedev.net/page/resources/_/reference/105/'>Game Industry</a>
+								</li>
+							
+
+								<li>
+									<a href='http://www.gamedev.net/page/resources/_/reference/110/'>For Beginners</a>
+								</li>
+							
+						</ul>
+					
+				</li>
+			
+		
+	</ul>
+</div>
+</div>
+
+
+<br/>
+		<form method='post' action='http://www.gamedev.net/page/resources'>
+
+<div class="panel a">
+  <div class="inner">
+		<h2 class="article badge">Search Articles</h2>
+<br/>
+<ul>
+<li>
+			<input type='hidden' name='do' value='search' />
+			<input type='text' name='search_value' />
+			<input type='submit' value='Search' />
+<li>
+</ul>
+	</div>
+</div>
+
+		</form>
+
+
+	
+	<div class="panel a">
+					<div class="inner">
+
+						<h2 class="article badge"><a href="/hub/resources/">Recent Resources</a></h2>
+						<ul>
+						
+						     
+							<li>
+								<h3><a href="http://www.gamedev.net/page/reference/index.html/_/reference/programming/unreal-development-kit-upgrade-overview-r2817">Unreal Development Kit Upgrade Overview</a></h3>
+								<p class="meta"><span class="postdate">Aug 26 2011 02:19 PM</span> | <a class="discussion" href="http://www.gamedev.net/page/reference/index.html/_/reference/programming/unreal-development-kit-upgrade-overview-r2817">1 Comments</a></p>
+							</li>
+		                                     
+
+							<li>
+								<h3><a href="http://www.gamedev.net/page/reference/index.html/_/reference/105/excerpt-game-development-essentials-3rd-ed-r2816">Excerpt: Game Development Essentials 3rd Ed.</a></h3>
+								<p class="meta"><span class="postdate">Aug 23 2011 06:04 PM</span> | <a class="discussion" href="http://www.gamedev.net/page/reference/index.html/_/reference/105/excerpt-game-development-essentials-3rd-ed-r2816">3 Comments</a></p>
+							</li>
+		                                     
+
+							<li>
+								<h3><a href="http://www.gamedev.net/page/reference/index.html/_/reference/105/tune-in-to-the-intel-appup-show-for-developers-r2815">Tune in to the Intel AppUp Show for Developers</a></h3>
+								<p class="meta"><span class="postdate">Aug 18 2011 01:20 PM</span> | <a class="discussion" href="http://www.gamedev.net/page/reference/index.html/_/reference/105/tune-in-to-the-intel-appup-show-for-developers-r2815">0 Comments</a></p>
+							</li>
+		                                     
+
+							<li>
+								<h3><a href="http://www.gamedev.net/page/reference/index.html/_/reference/accelerating-iray-with-the-nvidia-quadro-5000-r2814">Accelerating iray with the NVIDIA Quadro 5000</a></h3>
+								<p class="meta"><span class="postdate">Aug 15 2011 01:51 PM</span> | <a class="discussion" href="http://www.gamedev.net/page/reference/index.html/_/reference/accelerating-iray-with-the-nvidia-quadro-5000-r2814">2 Comments</a></p>
+							</li>
+		                                     
+
+							<li>
+								<h3><a href="http://www.gamedev.net/page/reference/index.html/_/reference/105/meego-gaining-momentum-r2813">MeeGo gaining momentum</a></h3>
+								<p class="meta"><span class="postdate">Aug 11 2011 01:31 PM</span> | <a class="discussion" href="http://www.gamedev.net/page/reference/index.html/_/reference/105/meego-gaining-momentum-r2813">0 Comments</a></p>
+							</li>
+		                                     
+
+							<li>
+								<h3><a href="http://www.gamedev.net/page/reference/index.html/_/reference/visual-arts/concept-art-with-photoshop-characters-r2811">Concept Art with Photoshop - Characters</a></h3>
+								<p class="meta"><span class="postdate">Aug 08 2011 04:56 PM</span> | <a class="discussion" href="http://www.gamedev.net/page/reference/index.html/_/reference/visual-arts/concept-art-with-photoshop-characters-r2811">2 Comments</a></p>
+							</li>
+		                                     
+
+							<li>
+								<h3><a href="http://www.gamedev.net/page/reference/index.html/_/reference/visual-arts/maya-entertainment-creation-suite-2012-review-r2810">Maya Entertainment Creation Suite 2012 Review</a></h3>
+								<p class="meta"><span class="postdate">Aug 01 2011 03:34 PM</span> | <a class="discussion" href="http://www.gamedev.net/page/reference/index.html/_/reference/visual-arts/maya-entertainment-creation-suite-2012-review-r2810">1 Comments</a></p>
+							</li>
+		                                     
+						
+						</ul>
+						<p class="more"><a href="/hub/resources/">Show more &raquo;</a> | <a href="/index.php?app=core&module=search&do=new_posts&search_app=ccs">View all recent resources»</a></p>
+					</div>
+				</div>		
+</div>
+
+<div class="fluid"><div class='articles view'>
+	
+
+<h1 class='article_title'><a href='http://www.gamedev.net/page/resources/_/reference/programming/isometric-and-tile-based-games/298/tilemap-based-game-techniques-handling-terrai-r934?' class="article_link">Tile/Map-Based Game Techniques: Handling Terrain Transitions</a></h1>
+	<span class='desc posted_info'>
+		Published Feb 23 2000 04:15 PM in <a href='http://www.gamedev.net/page/resources/_/reference/programming/isometric-and-tile-based-games/298/'>General</a>
+	</span>
+	<span class='rating'>
+			 
+					<img src='http://public.gamedev.net/public/style_images/master/bullet_star_off.png' alt='-' class='rate_img' /><img src='http://public.gamedev.net/public/style_images/master/bullet_star_off.png' alt='-' class='rate_img' /><img src='http://public.gamedev.net/public/style_images/master/bullet_star_off.png' alt='-' class='rate_img' /><img src='http://public.gamedev.net/public/style_images/master/bullet_star_off.png' alt='-' class='rate_img' /><img src='http://public.gamedev.net/public/style_images/master/bullet_star_off.png' alt='-' class='rate_img' /><span id='rating_text' class='desc'></span>
+		</span>	
+
+	<div id='article_body' class="yui3-cssreset yui3-cssbase">
+<b>By 
+
+   David Michael 
+
+
+
+      (<a href='http://www.samugames.com/'>Samu Games</a>)
+   
+</b><br/>
+
+
+   <br/>
+
+
+		
+
+This article is another in my series of Tile/Map-based Game Techniques. In this article I discuss a method for handling terrain transitions on your main map display.<br />
+<br />
+ First off, by "terrain" I am referring to the background or base layer of graphics for the map display. Terrain might refer to normal terrain types, such as grasslands or forests, but it is not limited to this. In a science-fiction game, for instance, the terrain could be bare metal or even the landscape features of another planet.<br />
+<br />
+ <br />
+<span style='font-size: 21px;'><strong class='bbc'>The Problem</strong></span><br />
+<br />
+The problem of terrain transitioning grows out of the need for a single type of terrain to be able to mesh with itself and still look good when placed next to another terrain. A forest tile should fit together with other forest tiles so that the forest proceeds seamlessly from one map cell to the next. But what happens when the forest tile is placed next to another type of terrain, such as mountains or grassland? Without some form "transitioning" the map looks very blocky and artificial.<br />
+<br />
+ <strong class='bbc'>Figure 1: Terrain Without Transitions</strong><br />
+<br />
+<span class='bbc_left'> <a class='resized_img' rel='lightbox[e80375986aa4444babc8c0d607e817a8]' id='ipb-attach-url-2901-0-52690700-1315757199' href="http://www.gamedev.net/index.php?app=core&amp;module=attach&amp;section=attach&amp;attach_rel_module=ccs&amp;attach_id=2901" title="TerrainTransitionExample.gif - Size: 8.69K, Downloads: 197"><img src="http://uploads.gamedev.net/monthly_06_2011/ccs-8549-0-33111000-1307467438_thumb.gif" id='ipb-attach-img-2901-0-52690700-1315757199' style='width:148;height:148' class='attach' width="148" height="148" alt="Attached Image: TerrainTransitionExample.gif" /></a> </span><br />
+ One solution to the problem is to create specialized transition tiles that "blend" sections of each terrain into a single tile. However, the need for all terrains to transition into any other means that the number of specialized tiles escalates quickly. It may not be obvious at first glance, but the number of transitions required even between just 2 terrain types is quite large. On a square grid, there are 8 possible points of transition: one for each side and one for each corner. Even the simple forest-to-grassland transition would require 256 transitions, and this would have to be done for each terrain transition combination. If you have 9 or 10 terrain types, the amount of graphics this approach would require is unworkable.<br />
+<br />
+ This can be refined some by using transitions with a transparent element, allowing for more variety with fewer tiles. The forest transitions would then be able to overlap any terrain. But 256 transition variations for each terrain type still seems pretty excessive.<br />
+<br />
+ So how do you trim down the number of required transition graphics to a number that is more manageable? This is how we did it.<br />
+<br />
+ <br />
+<span style='font-size: 21px;'><strong class='bbc'>Our Solution</strong></span><br />
+<br />
+The first part of our solution was to assign a "precedence" to the various terrain types. By precedence, I mean that when two different terrain types meet, one of them invariably "overlaps" the other. In the example of forest meeting grassland, if forest has a higher precedence (and it should) then it will always overlap the grassland.<br />
+<br />
+ In Artifact, we used the following terrain precedence (listed highest to lowest): jungle, forest, mountain, hill, swamp, deserts, grassland, water (open water or river). Please note that this precedence does not reflect the relative elevations of the terrain but is instead based on which terrains looks best when overlapping other terrains.<br />
+<br />
+ <strong class='bbc'>Figure 2: Artifact Terrain Precedence</strong><br />
+<br />
+<a class='resized_img' rel='lightbox[e80375986aa4444babc8c0d607e817a8]' id='ipb-attach-url-2902-0-52710300-1315757199' href="http://www.gamedev.net/index.php?app=core&amp;module=attach&amp;section=attach&amp;attach_rel_module=ccs&amp;attach_id=2902" title="TerrainTransitionPrecedence.gif - Size: 10.77K, Downloads: 279"><img src="http://uploads.gamedev.net/monthly_06_2011/ccs-8549-0-98649500-1307467467_thumb.gif" id='ipb-attach-img-2902-0-52710300-1315757199' style='width:250;height:28' class='attach' width="250" height="28" alt="Attached Image: TerrainTransitionPrecedence.gif" /></a><br />
+<br />
+ The next step was to reduce the number of terrain transition variations from 256. This number can be cut drastically by separating the "edge" transitions and the "corner" transitions. As it was pointed out above, a single terrain cell has 8 points of transition: one for each side and one for each corner. Thus, there are only 16 possible edge transitions, and 16 possible corner transitions. By using combinations of edge and corner transitions you can create all of the necessary 256 variations with only 32 total tiles. This is a huge reduction in graphics required.<br />
+<br />
+ The template we used followed a binary format. For the edges, west was considered "bit 0", north was "bit 1", and east and south were "bit 2" and "bit 3", respectively. Similarly for the corners, the northwest corner was "bit 0", the northeast corner "bit 1", and so on. How we arranged the actual terrain transition graphics is demonstrated in Figure 3. If you think of the covered edges as 1 and the non-covered edges as 0, you can see that the columns proceed in normal binary manner: 0000, 0001, 0010, 0011, 0100, and so on.<br />
+<br />
+ <strong class='bbc'>Figure 3: Terrain Transition Template</strong><br />
+<br />
+<a class='resized_img' rel='lightbox[e80375986aa4444babc8c0d607e817a8]' id='ipb-attach-url-2903-0-52721400-1315757199' href="http://www.gamedev.net/index.php?app=core&amp;module=attach&amp;section=attach&amp;attach_rel_module=ccs&amp;attach_id=2903" title="TerrainTransitionTemplate.gif - Size: 2.74K, Downloads: 362"><img src="http://uploads.gamedev.net/monthly_06_2011/ccs-8549-0-92862100-1307467497_thumb.gif" id='ipb-attach-img-2903-0-52721400-1315757199' style='width:250;height:33' class='attach' width="250" height="33" alt="Attached Image: TerrainTransitionTemplate.gif" /></a><br />
+ <br />
+ Figure 4 shows how this was applied to create the grassland transitions in Artifact.<br />
+<br />
+ <strong class='bbc'>Figure 4: Artifact Grassland Transitions</strong><br />
+<br />
+<a class='resized_img' rel='lightbox[e80375986aa4444babc8c0d607e817a8]' id='ipb-attach-url-2904-0-52731800-1315757199' href="http://www.gamedev.net/index.php?app=core&amp;module=attach&amp;section=attach&amp;attach_rel_module=ccs&amp;attach_id=2904" title="ArtifactGrasslandTransitions.gif - Size: 7.95K, Downloads: 312"><img src="http://uploads.gamedev.net/monthly_06_2011/ccs-8549-0-57863900-1307467523_thumb.gif" id='ipb-attach-img-2904-0-52731800-1315757199' style='width:250;height:32' class='attach' width="250" height="32" alt="Attached Image: ArtifactGrasslandTransitions.gif" /></a><br />
+ <br />
+ With this method drawing the map is now a 2-step process. For each map cell, the base terrain must be drawn, and then any transitions that overlay it in reverse order of precedence (lowest precedence drawn first). However, the reduction in graphics required more than makes up for the additional work. Also, since the transition graphics are mostly transparent, the actual "work" involved is less than it might seem.<br />
+<br />
+ Using the precedence established earlier, and the bit assignments for the edges and corners, calculating which transitions you need in a particular map cell is relatively straightforward. Essentially, for each map cell, you check all adjacency possibilities for terrain types that overlap the terrain of the cell. The transition information for a single terrain type need only use 8-bits of data (4 bits for the edges and 4 bits for the corners) which fits conveniently into a single byte. Thus, the total terrain transition information for Artifact's 9 terrain types requires only 9 bytes per map cell.<br />
+<br />
+ You can pre-calculate the transition information and store it with the map, or you can calculate it "on the fly" at runtime. For rendering Artifact's map display, I calculate the transitions for the visible portion of the map only. This reduces the amount of storage required since only a small portion of the map is visible at one time.<br />
+<br />
+ A quick example: To calculate the transitions needed for a hill terrain, you need only consider any adjacent jungles, forests, and mountains, since those are the only terrain types that have a higher precedence. Figure 5 demonstrates the overlapping of transitions on the base terrain graphics, with a hill as the center terrain.<br />
+<br />
+ <strong class='bbc'>Figure 5: Artifact Terrains, Before and After</strong><br />
+<br />
+ <a class='resized_img' rel='lightbox[e80375986aa4444babc8c0d607e817a8]' id='ipb-attach-url-2906-0-52751900-1315757199' href="http://www.gamedev.net/index.php?app=core&amp;module=attach&amp;section=attach&amp;attach_rel_module=ccs&amp;attach_id=2906" title="TerrainsBefore.gif - Size: 8.51K, Downloads: 313"><img src="http://uploads.gamedev.net/monthly_06_2011/ccs-8549-0-72590800-1307467558_thumb.gif" id='ipb-attach-img-2906-0-52751900-1315757199' style='width:111;height:111' class='attach' width="111" height="111" alt="Attached Image: TerrainsBefore.gif" /></a> <a class='resized_img' rel='lightbox[e80375986aa4444babc8c0d607e817a8]' id='ipb-attach-url-2905-0-52741800-1315757199' href="http://www.gamedev.net/index.php?app=core&amp;module=attach&amp;section=attach&amp;attach_rel_module=ccs&amp;attach_id=2905" title="TerrainsAfter.gif - Size: 10.48K, Downloads: 194"><img src="http://uploads.gamedev.net/monthly_06_2011/ccs-8549-0-49235600-1307467558_thumb.gif" id='ipb-attach-img-2905-0-52741800-1315757199' style='width:111;height:111' class='attach' width="111" height="111" alt="Attached Image: TerrainsAfter.gif" /></a><br />
+ <br />
+<br />
+<span style='font-size: 21px;'><strong class='bbc'>Conclusion</strong></span><br />
+<br />
+With a bit of preparation in the graphics and a few tricks during the rendering, you can achieve professional-looking terrain transitions in your game. While drawing the map becomes a bit more complicated, the reduction in graphics required and the flexibility of the system more than make up for that.
+	
+
+
+
+
+
+<br/><br/>
+<h2>About the Author(s)</h2>
+
+<i><a href='mailto:davidrm@busprod.com' title='E-mail Link' class='bbc_email'>David Michael</a> is co-owner of <a href='http://www.samugames.com/' class='bbc_url' title='External link' rel='nofollow external'>Samu Games</a> and has produced several online games, including <a href='http://www.samugames.com/artfact' class='bbc_url' title='External link' rel='nofollow external'>Artifact</a> and <a href='http://www.paintball-net.com/' class='bbc_url' title='External link' rel='nofollow external'>Paintball NET</a>.<br />
+<br />
+ Copyright © 1999 by David Michael. All Rights Reserved.<br />
+All Artwork Copyright © 1999 by Samu Games. All Rights Reserved.</i>
+
+
+	</div>
+	
+	<div class='share_links'>
+			
+			
+
+	<ul class='topic_share left shareButtons'>
+	
+		<li><a href="http://www.gamedev.net/index.php?sharelink=twitter;aHR0cDovL3d3dy5nYW1lZGV2Lm5ldC9wYWdlL3Jlc291cmNlcy9fL3JlZmVyZW5jZS9wcm9ncmFtbWluZy9pc29tZXRyaWMtYW5kLXRpbGUtYmFzZWQtZ2FtZXMvMjk4L3RpbGVtYXAtYmFzZWQtZ2FtZS10ZWNobmlxdWVzLWhhbmRsaW5nLXRlcnJhaS1yOTM0;" rel="nofollow" target="_blank" title="Share this link via Twitter" class='_slink' id='slink_twitter'><img src="http://www.gamedev.net/public/style_extra/sharelinks/twitter.png" /></a></li>
+	
+
+		<li><a href="http://www.gamedev.net/index.php?sharelink=facebook;aHR0cDovL3d3dy5nYW1lZGV2Lm5ldC9wYWdlL3Jlc291cmNlcy9fL3JlZmVyZW5jZS9wcm9ncmFtbWluZy9pc29tZXRyaWMtYW5kLXRpbGUtYmFzZWQtZ2FtZXMvMjk4L3RpbGVtYXAtYmFzZWQtZ2FtZS10ZWNobmlxdWVzLWhhbmRsaW5nLXRlcnJhaS1yOTM0;" rel="nofollow" target="_blank" title="Share this link via Facebook" class='_slink' id='slink_facebook'><img src="http://www.gamedev.net/public/style_extra/sharelinks/facebook.png" /></a></li>
+	
+
+		<li><a href="http://www.gamedev.net/index.php?sharelink=digg;aHR0cDovL3d3dy5nYW1lZGV2Lm5ldC9wYWdlL3Jlc291cmNlcy9fL3JlZmVyZW5jZS9wcm9ncmFtbWluZy9pc29tZXRyaWMtYW5kLXRpbGUtYmFzZWQtZ2FtZXMvMjk4L3RpbGVtYXAtYmFzZWQtZ2FtZS10ZWNobmlxdWVzLWhhbmRsaW5nLXRlcnJhaS1yOTM0;" rel="nofollow" target="_blank" title="Share this link via Digg" class='_slink' id='slink_digg'><img src="http://www.gamedev.net/public/style_extra/sharelinks/digg.png" /></a></li>
+	
+
+		
+	
+
+		
+	
+
+		<li><a href="http://www.gamedev.net/index.php?sharelink=reddit;aHR0cDovL3d3dy5nYW1lZGV2Lm5ldC9wYWdlL3Jlc291cmNlcy9fL3JlZmVyZW5jZS9wcm9ncmFtbWluZy9pc29tZXRyaWMtYW5kLXRpbGUtYmFzZWQtZ2FtZXMvMjk4L3RpbGVtYXAtYmFzZWQtZ2FtZS10ZWNobmlxdWVzLWhhbmRsaW5nLXRlcnJhaS1yOTM0;" rel="nofollow" target="_blank" title="Share this link via Reddit" class='_slink' id='slink_reddit'><img src="http://www.gamedev.net/public/style_extra/sharelinks/reddit.png" /></a></li>
+	
+
+		
+	
+
+		<li><a href="http://www.gamedev.net/index.php?sharelink=print;aHR0cDovL3d3dy5nYW1lZGV2Lm5ldC9wYWdlL3Jlc291cmNlcy9fL3JlZmVyZW5jZS9wcm9ncmFtbWluZy9pc29tZXRyaWMtYW5kLXRpbGUtYmFzZWQtZ2FtZXMvMjk4L3RpbGVtYXAtYmFzZWQtZ2FtZS10ZWNobmlxdWVzLWhhbmRsaW5nLXRlcnJhaS1yOTM0;" rel="nofollow" target="_blank" title="Print" class='_slink' id='slink_print'><img src="http://www.gamedev.net/public/style_extra/sharelinks/print.png" /></a></li>
+	
+
+		<li><a href="http://www.gamedev.net/index.php?sharelink=download;aHR0cDovL3d3dy5nYW1lZGV2Lm5ldC9wYWdlL3Jlc291cmNlcy9fL3JlZmVyZW5jZS9wcm9ncmFtbWluZy9pc29tZXRyaWMtYW5kLXRpbGUtYmFzZWQtZ2FtZXMvMjk4L3RpbGVtYXAtYmFzZWQtZ2FtZS10ZWNobmlxdWVzLWhhbmRsaW5nLXRlcnJhaS1yOTM0;" rel="nofollow" target="_blank" title="Download" class='_slink' id='slink_download'><img src="http://www.gamedev.net/public/style_extra/sharelinks/download.png" /></a></li>
+	
+	</ul>
+	<script type="text/javascript">
+		ipb.sharelinks.url   = "http://www.gamedev.net/page/resources/_/reference/programming/isometric-and-tile-based-games/298/tilemap-based-game-techniques-handling-terrai-r934";
+		ipb.sharelinks.title = "";
+		ipb.sharelinks.bname = "GameDev.net";
+	</script>
+
+		</div>
+	
+<br><br>
+
+
+<br />
+<h2 class='section_title'>0 Comments</h2>
+<div class='topic_controls comment_pages'>
+	<div>
+	<span class='pagination no_pages left'>Page 1 of 1</span>
+</div>
+</div>
+<a id='record_comments'></a>
+<div id='main_comment_wrap' class='comment_wrap clearfix'>
+	
+		<p class='no_messages'>No comments have been made yet</p>
+	
+	
+</div>
+<div class='topic_controls comment_pages'>
+	<div>
+	<span class='pagination no_pages left'>Page 1 of 1</span>
+</div>
+</div>
+<br /><br />
+
+<script type='text/javascript'>
+	ipb.delegate.register('.delete_post', function(e, elem)
+		{
+			if( !confirm( "Are you sure you want to delete this comment?" ) )
+			{
+				Event.stop(e);
+			}
+		}
+	);
+	
+	$$('.rep_show').each( function(elem){
+		$(elem).observe('click', function(e){
+			link = Event.findElement(e, 'a');
+			id = link.id.replace('unhide_post_', '');
+	
+			if( $('comment_id_' + id ).select('.post_wrap')[0] )
+			{
+				myelement = $('comment_id_' + id ).select('.post_wrap')[0];
+				new Effect.Parallel( [
+					new Effect.BlindDown( myelement ),
+					new Effect.Appear( myelement )
+				], { duration: 0.5 } );
+			}
+			
+			if( $('comment_id_' + id ).select('.post_ignore')[0] )
+			{
+				myelement = $('comment_id_' + id ).select('.post_ignore')[0];
+				myelement.hide();
+			}
+			
+			Event.stop(e);
+		});
+	});
+</script> 
+
+	
+
+</div>
+
+</div>
+
+<script type='text/javascript'>
+ipb.vars['image_resize']		= 1;
+ipb.global.post_width			= 500;
+Event.observe( window, 'load', function(){
+	// Resize images
+	$$('.article_body').each( function(elem){
+		ipb.global.findImgs( $( elem ) );
+	});
+});
+</script>
+</div>
+				
+				<br class='clear' />
+			</div>
+
+			<!-- __FOOTER__ -->
+			<!-- /__FOOTER__ -->
+			
+
+
+    
+			<div id='footer_utilities' class='clearfix clear rounded'>
+				<h2 class='hide'>Skin and Language</h2>
+				
+						<form action="http://www.gamedev.net/index.php?app=ccs&amp;module=pages&amp;section=pages&amp;do=redirect&amp;page=2" method="post" class='left'>
+							<fieldset>
+								<input type='hidden' name='k' value='880ea6a14ea49e853634fbdc5015a024' />
+								<label for='newSkin' class='hide'>Theme:</label>
+								<select name="settingNewSkin" id='newSkin'>
+									
+<option id='skinSetDD_4' selected="selected" value="4">GDNet Standard</option>
+								</select>
+								<input type='submit' value='Go' class='input_submit alt' id='newSkinSubmit' />
+							</fieldset>
+						</form>
+					
+				<form action="http://www.gamedev.net/index.php?app=ccs&amp;module=pages&amp;section=pages&amp;do=redirect&amp;page=2" method="post" class='left'>
+					<fieldset>
+						<input type='hidden' name='k' value='880ea6a14ea49e853634fbdc5015a024' />
+						<input type='hidden' name='setlanguage' value='1' />
+						<input type="hidden" name="langurlbits" value="app=ccs&amp;module=pages&amp;section=pages&amp;folder=/resources&amp;page=_&amp;cal_id=" />
+						<label for='newLang' class='hide'>Language:</label>
+						<select name="langid" id='newLang'>
+								
+<option value='1' selected="selected">English (USA)</option>
+						</select>
+						<input type='submit' class='input_submit alt' value='Go' id='newLangSubmit' />
+					</fieldset>
+				</form>
+
+			</div>
+
+                    
+<div id="footercontainer">
+	<div class="footer">
+			<div class="fRef">
+				<a href="http://www.gamedev.net/">
+					<img src="http://public.gamedev.net/images/1_logo_small.png" alt="Gamedev.net" border="0">
+				</a>
+				<div class="fRef-text">
+					Copyright © 1999-2011 GameDev.Net LLC
+                                        <p><br/>GameDev.net™, the GameDev.net logo, and GDNet™ are trademarks of GameDev.net, LLC</p>
+                                        <p><a href="http://www.thumbshots.com" target="_blank" title="Thumbnails Previews by Thumbshots">Thumbnails powered by Thumbshots</a></p>
+<p>Some Icons by <a href="http://dryicons.com/">DryIcons</a></p>
+
+				</div>
+
+			</div>
+
+			<div class="fNav">
+                        <h5>Navigation</h5>
+                        <ul>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/hub/features">Features</a></li>
+                        <li><a href="/hub/community">Community</a></li>
+                        <li><a href="/hub/resources">Resources</a></li>
+                        <li><a href="/hub/careers">Careers</a></li>
+                        </ul>
+                        </div>
+
+			<div class="fNav">
+                        <h5>Customer Service</h5>
+                        <ul>
+                        <li><a href="/subscribe/">GDNet+ Subscriptions</a></li>
+                        <li><a href="/info/media/joblistings.html">Job Advertising</a></li>
+                        <li><a href="/info/legal/tos.htm">Terms of Service</a></li>
+                        <li><a href="/info/legal/tos.htm#privacy">Privacy Policy</a></li>
+                        </ul>
+                        </div>
+
+			<div class="fNav">
+                        <h5>Company Info</h5>
+                        <ul>
+                        <li><a href="/info/about">About Us</a></li>
+                        <li><a href="/info/media/">Advertise on Gamedev.net</a></li>
+                        <li><a href="http://www.gamedev.net/info/about/contact.html">Contact Us</a></li>
+                        </ul>
+                        </div>
+
+			<div style="clear:both"><!--empty--></div>
+			<!--empty-->
+	</div>
+</div>
+
+
+
+			
+			
+				<script type='text/javascript' src='http://www.gamedev.net/public/js/3rd_party/lightbox.js'></script>
+<script type='text/javascript'>
+//<![CDATA[
+	// Lightbox Configuration
+	LightboxOptions = Object.extend({
+	    fileLoadingImage:        'http://public.gamedev.net/public/style_images/master/lightbox/loading.gif',     
+	    fileBottomNavCloseImage: 'http://public.gamedev.net/public/style_images/master/lightbox/closelabel.gif',
+	    overlayOpacity: 0.8,   // controls transparency of shadow overlay
+	    animate: true,         // toggles resizing animations
+	    resizeSpeed: 7,        // controls the speed of the image resizing animations (1=slowest and 10=fastest)
+	    borderSize: 10,         //if you adjust the padding in the CSS, you will need to update this variable
+		// When grouping images this is used to write: Image # of #.
+		// Change it for non-english localization
+		labelImage: "Image",
+		labelOf: "of"
+	}, window.LightboxOptions || {});
+/* Watch for a lightbox image and set up our downloadbutton watcher */
+document.observe('click', (function(event){
+    var target = event.findElement('a[rel*="lightbox"]') || event.findElement('area[rel*="lightbox"]');
+    if (target) {
+        event.stop();
+        gbl_addDownloadButton();
+    }
+}).bind(this));
+var _to    = '';
+var _last  = '';
+function gbl_addDownloadButton()
+{
+	if ( typeof( ipsLightbox.lightboxImage ) != 'undefined' && ipsLightbox.lightboxImage.src )
+	{
+		if ( _last != ipsLightbox.lightboxImage.src )
+		{
+			if ( ! $('gbl_d') )
+			{
+				$('bottomNav').insert( { top: "<div id='gbl_d' style='text-align:right;padding-bottom:4px;'></div>" } );
+			}
+			
+			$('gbl_d').update( "<a href='"+ ipsLightbox.lightboxImage.src + "' target='_blank'><img src='http://public.gamedev.net/public/style_images/master/lightbox/download-icon.png' /></a>" );
+			
+			_last = ipsLightbox.lightboxImage.src;
+		}
+	}
+	
+	/* Check for init and then keep checking for new image */
+	_to = setTimeout( "gbl_addDownloadButton()", 1000 );
+}
+//]]>
+</script>
+			
+		</div>
+
+<p id="fbtab"><a href="?lightbox[width]=500&lightbox[height]=500#fbform" class="lightbox"></a></p>
+<div style="display:none;visibility: hidden;">
+<div id="fbform">
+
+<div id="postc">
+<form id='postingform' action='#' method='post' name='REPLIER'  enctype='multipart/form-data'><input type='hidden' name='st' value='0' />
+<input type="hidden" name="refer" value="http://www.gamedev.net/page/resources/_/reference/programming/isometric-and-tile-based-games/298/tilemap-based-game-techniques-handling-terrai-r934">
+<div class="post_form" style="text-align:left">	
+<h3 class='maintitle'>Feedback</h3>
+<fieldset>
+	<h3 class='bar'>User Information</h3>
+	<ul>
+
+		<li class='field'>
+			<label for='name' style="width:100px;">Enter your name</label>
+			<input id='UserName' class='input_text' type="text" size="50" maxlength="150" name="username" value="" tabindex="0"/>
+		</li>
+
+		
+	</ul>
+</fieldset>
+<fieldset>
+	<h3 class='bar'>Feedback</h3>
+ 
+		<ul>
+			<li class='field'>
+				<label for='TopicTitle' style="width:100px;">Title</label>
+				<input id='TopicTitle' class='input_text' type="text" size="50" maxlength="150" name="title" value="" tabindex="0" />
+			</li>
+			<li class='field'>
+				<label for='type' style="width:100px;">Type</label>
+
+<select id='type' name='type' type='select' class='input_select'>
+<option value="1">Site Feedback and Suggestions</option>
+<option value="2">Problem With Article</option> 
+<option value="3">Site Bug Report</option>
+<option value="4">GDNet Marketplace Feedback</option>
+</select>
+			</li>
+			<li class="field">
+				<label for='message' style="width:100px;">Message</label>
+				<textarea name="message" id="msg" wrap="soft" class="input_text" cols="80" rows="10"></textarea>
+</li>
+
+				
+			</li>
+		</ul>
+</fieldset> 
+
+</div>
+<fieldset class='submit'>
+	<input type="button" name="dosubmit" value="Post Message" tabindex="0" class="input_submit" onclick='submitFeedback(this.form)' accesskey="s"/>&nbsp;
+</fieldset>
+</form>
+
+</div>
+
+</div>
+</div>
+<script type='text/javascript'>GA_googleFillSlot("In-text_main");</script>
+	</body>
+</html>

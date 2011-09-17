@@ -14,7 +14,7 @@ __author__ = "Xarts19 (xarts19@gmail.com)"
 __version__ = "Version: 0.0.1 "
 __date__ = "Date: 2011-08-22 12:40:17.689062 "
 
-_LOGGER = logging.getLogger('main.map')
+LOGGER = logging.getLogger('main.map')
 
 class GameMap(object):
     '''Stores map image and array. Loads levels.'''
@@ -135,7 +135,7 @@ class Path(object):
 # helper function for GameMap class
 def _init_level(level_map, tile_factory):
     '''Construct 2d array of Tiles from 2d array of tile types.'''
-    _LOGGER.debug("Creating tiles for level")
+    LOGGER.debug("Creating tiles for level")
     level = []
     # create tiles from level definition
     for i, row in enumerate(level_map):
@@ -161,7 +161,7 @@ class _TileFactory(object):
 
         # check if such type exist
         if tile_type not in tile_types:
-            _LOGGER.exception("No such tile type: %s", tile_type)
+            LOGGER.exception("No such tile type: %s", tile_type)
             return None
 
         # init info from type
@@ -198,7 +198,7 @@ class Tile(object):
     @unit.setter
     def unit(self, value):
         if value is not None and self.unit:
-            _LOGGER.exception("Tile at %s already occupied.", self.pos)
+            LOGGER.exception("Tile at %s already occupied.", self.pos)
         self._unit = value
 
     @property

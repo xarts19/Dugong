@@ -30,7 +30,7 @@ import game
 import utils
 from utils import RES_MANAGER
 
-_LOGGER = logging.getLogger('main.gamestates')
+LOGGER = logging.getLogger('main.gamestates')
 
 class GameStateManager(object):
 
@@ -106,8 +106,8 @@ class GameStateManager(object):
 class _GameState(object):
 
     def __init__(self, state_manager, level_name, level_info):
-        _LOGGER.debug("Creating game")
-        _LOGGER.debug("Initializing level '%s'", level_name)
+        LOGGER.debug("Creating game")
+        LOGGER.debug("Initializing level '%s'", level_name)
         self.is_transparent = False
         self._state_manager = state_manager
         self._game = game.Game(level_info)
@@ -229,7 +229,7 @@ class _MenuState(object):
         pass
 
     def _init_menu(self):
-        _LOGGER.warning("Calling stub method _init_menu of %s", self)
+        LOGGER.warning("Calling stub method _init_menu of %s", self)
 
     def update(self, game_ticks):
         mouse_pos = pygame.mouse.get_pos()
@@ -245,7 +245,7 @@ class _MainMenuState(_MenuState):
 
     def __init__(self, state_manager):
         super(_MainMenuState, self).__init__(state_manager, 'main_menu.jpg')
-        _LOGGER.debug("Creating main menu")
+        LOGGER.debug("Creating main menu")
         self._levels = RES_MANAGER.get('levels_info')
 
     def _init_menu(self):
@@ -290,7 +290,7 @@ class _InGameMenuState(_MenuState):
     def __init__(self, state_manager, cutscene=False):
         self._cutscene = cutscene
         super(_InGameMenuState, self).__init__(state_manager, 'in_game_menu.jpg')
-        _LOGGER.debug("Creating in game menu")
+        LOGGER.debug("Creating in game menu")
         self.is_transparent = True
 
     def _init_menu(self):

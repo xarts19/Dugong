@@ -28,6 +28,13 @@ class UnitFactory(object):
 
     def __init__(self):
         self._unit_types = utils.RES_MANAGER.get('unit_types')
+        self.id = self.id_counter()
+
+    def id_counter(self):
+        _id = 0
+        while True:
+            yield _id
+            _id += 1
 
     def create_unit(self, unit_type, tile, owner=None):
         '''Returns tile instance with attributes for provided type.'''
@@ -43,14 +50,15 @@ class UnitFactory(object):
 
         renderer_class = getattr(sys.modules[__name__], unit_type.capitalize() + 'Renderer', UnitRenderer)
         unit_class = getattr(sys.modules[__name__], unit_type.capitalize(), Unit)
-        unit = unit_class(unit_type, type_info, renderer_class, tile, owner)
+        unit = unit_class(self.id.next(), unit_type, type_info, renderer_class, tile, owner)
         return unit
 
 
 class Unit(pygame.sprite.Sprite):
 
-    def __init__(self, unit_type, type_info, renderer_class, tile, owner):
+    def __init__(self, _id, unit_type, type_info, renderer_class, tile, owner):
         super(Unit, self).__init__()
+        self.id = _id
         self.type = unit_type
         self.owner = owner
         self.tile = tile
@@ -67,7 +75,7 @@ class Unit(pygame.sprite.Sprite):
         _LOGGER.debug("Unit created: %s", self)
 
     def __repr__(self):
-        return "<%s at %s>" % (self._type, self._tile)
+        return "<%s(ID:%s) at %s>" % (self.type, self.id, self.tile)
 
     def can_attack(self, unit):
         in_range = self.tile.distance(unit.tile) <= self._range
@@ -189,7 +197,7 @@ class AnimatedImage(object):
         self._images = animation
         self._current = animation[0]
         self._path = path
-        self._pos = path['path'][0]
+        self._step = 0
         self.animated = True
         # Track the time we started, and the time between updates.
         # Then we can figure out when we have to switch the image.
@@ -198,7 +206,6 @@ class AnimatedImage(object):
         self._anim_update = 0
         self._move_update = 0
         self._frame = 0
-        self.update(0)
 
     def update(self, t):
         if self.animated:
@@ -211,12 +218,18 @@ class AnimatedImage(object):
                 self._anim_update = t
             if t - self._move_update > self._move_delay:
                 # move image
-                if self._path['current'] == len(self._path['path']) - 1:
-                    self._pos = self._path['path'][-1]
+                if self._step >= len(self._path) - 1:
+                    self._pos = self._path[-1]
                     self.animated = False
                 else:
-                    self._path['current'] += 1
-                    self._pos = self._path['path'][self._path['current']]
+                    self._pos = self._path[self._step]
+                    if self._move_update != 0:
+                        # skips some steps if framerate is too low for
+                        # needed movement speed
+                        diff = (t - self._move_update) / self._move_delay
+                    else:
+                        diff = 1
+                    self._step += diff
                 self._move_update = t
 
     def get(self):
@@ -228,7 +241,7 @@ class AnimatedImage(object):
 
 def create_pixel_path(path):
     '''Create path in pixels from path in tiles.'''
-    pixel_path = {'current': 0, 'path': []}
+    pixel_path = []
     path = straighten_path(path.tiles)
     for tile1, tile2 in zip(path[:-1], path[1:]):
         x1, y1 = tile1.pos
@@ -240,8 +253,8 @@ def create_pixel_path(path):
             delta = abs(abs(i - 10) - 10)
             x1 += delta * l_x
             y1 += delta * l_y
-            pixel_path['path'].append((x1, y1))
-    pixel_path['path'].append(path[-1].pos)
+            pixel_path.append((x1, y1))
+    pixel_path.append(path[-1].pos)
     return pixel_path
 
 
